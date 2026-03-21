@@ -25,7 +25,7 @@ export default function InterviewsPage() {
               href={`/interviews/${interview.slug}`}
               className="group block"
             >
-              <div className="relative aspect-[3/4] overflow-hidden mb-4">
+              <div className="relative aspect-[3/4] overflow-hidden rounded-2xl mb-4">
                 <Image
                   src={interview.portrait}
                   alt={interview.name}

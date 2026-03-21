@@ -10,15 +10,15 @@ export default function SectionHeader({ title, viewAllHref, light }: SectionHead
   return (
     <div className="flex items-center justify-between mb-10">
       <div>
-        <h2 className={`font-serif text-sm uppercase tracking-[0.15em] ${light ? "text-cream" : "text-dark"}`}>
+        <p className="text-accent text-[11px] font-bold uppercase tracking-[0.2em] mb-2">
           {title}
-        </h2>
-        <div className={`mt-2 w-12 h-[1px] ${light ? "bg-cream/30" : "bg-dark/20"}`} />
+        </p>
+        <div className="w-10 h-[2px] bg-accent/50" />
       </div>
       {viewAllHref && (
         <Link
           href={viewAllHref}
-          className={`text-xs font-medium uppercase tracking-[0.1em] ${light ? "text-cream/60 hover:text-cream" : "text-muted hover:text-dark"} transition-colors`}
+          className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted hover:text-accent transition-colors"
         >
           View All &rarr;
         </Link>

@@ -55,7 +55,7 @@ export default function ReelsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredReels.map((reel) => (
             <div key={reel.id} className="group cursor-pointer">
-              <div className="relative aspect-[9/16] overflow-hidden mb-3">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-2xl mb-3">
                 <Image
                   src={reel.thumbnail}
                   alt={reel.title}

@@ -5,37 +5,70 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import { articles } from "@/lib/data";
 
 export default function LatestStories() {
-  const latest = articles.slice(0, 6);
+  const latest = articles.slice(0, 5);
+  const [hero, ...rest] = latest;
 
   return (
-    <section className="py-20 px-6">
+    <section className="py-20 px-6 bg-dark">
       <div className="mx-auto max-w-[1280px]">
-        <SectionHeader title="Latest Stories" viewAllHref="/stories/the-sound-of-the-new-south" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {latest.map((article) => (
-            <Link
-              key={article.slug}
-              href={`/stories/${article.slug}`}
-              className="group block"
-            >
-              <div className="relative aspect-[3/2] overflow-hidden mb-4">
+        <SectionHeader title="Latest Stories" viewAllHref="/stories/the-sound-of-the-new-south" light />
+
+        <div className="flex gap-3 h-[700px]">
+
+          {/* Left — 1 large image, full height */}
+          <Link
+            href={`/stories/${hero.slug}`}
+            className="group relative w-1/2 shrink-0 overflow-hidden rounded-2xl"
+          >
+            <Image
+              src={hero.featuredImage}
+              alt={hero.title}
+              fill
+              className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              priority
+              sizes="50vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-dark/85 via-dark/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6">
+              <Badge variant="city">{hero.city.name}</Badge>
+              <h3 className="font-serif text-2xl md:text-3xl font-bold text-cream mt-2 mb-2 leading-snug group-hover:text-accent transition-colors">
+                {hero.title}
+              </h3>
+              <p className="text-sm text-cream/60">
+                By {hero.author.name} &middot; {hero.readTime} min read
+              </p>
+            </div>
+          </Link>
+
+          {/* Right — 2×2 grid of 4 smaller images */}
+          <div className="grid grid-cols-2 grid-rows-2 gap-3 flex-1">
+            {rest.map((article) => (
+              <Link
+                key={article.slug}
+                href={`/stories/${article.slug}`}
+                className="group relative overflow-hidden rounded-2xl"
+              >
                 <Image
                   src={article.featuredImage}
                   alt={article.title}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                  sizes="25vw"
                 />
-              </div>
-              <Badge variant="city">{article.city.name}</Badge>
-              <h3 className="font-serif text-xl font-bold text-dark mt-2 mb-2 group-hover:text-accent transition-colors">
-                {article.title}
-              </h3>
-              <p className="text-sm text-muted">
-                By {article.author.name} &middot; {article.readTime} min read
-              </p>
-            </Link>
-          ))}
+                <div className="absolute inset-0 bg-gradient-to-t from-dark/85 via-dark/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <Badge variant="city">{article.city.name}</Badge>
+                  <h3 className="font-serif text-base font-bold text-cream mt-1.5 leading-snug group-hover:text-accent transition-colors line-clamp-2">
+                    {article.title}
+                  </h3>
+                  <p className="text-xs text-cream/50 mt-1">
+                    {article.author.name} &middot; {article.readTime} min
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
         </div>
       </div>
     </section>

@@ -13,7 +13,7 @@ export default function ReelsPreview() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
           {displayReels.map((reel) => (
             <Link key={reel.id} href="/reels" className="group block">
-              <div className="relative aspect-[9/16] overflow-hidden mb-3">
+              <div className="relative aspect-[9/16] overflow-hidden rounded-2xl mb-3">
                 <Image
                   src={reel.thumbnail}
                   alt={reel.title}

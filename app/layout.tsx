@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import PublicShell from "@/components/layout/PublicShell";
 
 export const metadata: Metadata = {
   title: "TAARi – Documenting the African Diaspora",
@@ -19,9 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-white text-dark antialiased">
-        <Navbar />
-        <main>{children}</main>
-        <Footer />
+        <PublicShell>{children}</PublicShell>
       </body>
     </html>
   );
