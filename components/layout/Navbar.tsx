@@ -28,7 +28,7 @@ export default function Navbar() {
               <div key={link.href} className="flex items-center">
                 <Link
                   href={link.href}
-                  className="text-sm font-medium text-gray-300 hover:text-white transition-colors px-4 py-1"
+                  className="text-sm font-medium text-white hover:text-accent transition-colors px-4 py-1"
                 >
                   {link.label}
                 </Link>
@@ -51,7 +51,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-3 ml-auto">
             <Link
               href="/submit"
-              className="flex items-center gap-2 bg-green text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-green-dark transition-colors"
+              className="flex items-center gap-2 bg-btn-bg text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-btn-bg-hover transition-colors"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 20h9" />

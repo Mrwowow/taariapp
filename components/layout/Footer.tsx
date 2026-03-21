@@ -5,32 +5,7 @@ export default function Footer() {
   return (
     <footer className="bg-dark text-white">
       {/* CTA top banner */}
-      <div className="border-b border-white/10 py-10 px-4 md:px-6">
-        <div className="mx-auto max-w-[1320px] flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-center md:text-left">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-gray-400 mb-2">
-              GreenGrowth TV &nbsp;&middot;&nbsp; Eye Watch &nbsp;&middot;&nbsp; Report
-            </p>
-            <h3 className="font-serif text-xl md:text-2xl font-bold text-white mb-1">
-              Stay Informed. Get Involved. Make a Difference
-            </h3>
-            <p className="text-sm text-gray-400 max-w-xl">
-              Join us at the forefront of news and community action. From breaking stories to grassroots initiatives.
-            </p>
-          </div>
-          <div className="flex gap-3 shrink-0">
-            <Link href="/submit" className="flex items-center gap-2 bg-green text-white text-sm font-medium px-5 py-2.5 rounded-lg hover:bg-green-dark transition-colors">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              Submit Your story
-            </Link>
-            <button className="text-sm font-medium text-white border border-white/30 px-5 py-2.5 rounded-lg hover:border-white transition-colors">
-              Subscribe for Updates
-            </button>
-          </div>
-        </div>
-      </div>
+     
 
       {/* Main footer */}
       <div className="mx-auto max-w-[1320px] px-4 md:px-6 pt-12 pb-8">
@@ -51,7 +26,7 @@ export default function Footer() {
                 </div>
                 <input type="email" placeholder="Your email" className="bg-transparent text-sm text-white placeholder:text-gray-500 px-3 py-2 w-[120px] outline-none" />
               </div>
-              <button className="bg-green text-white text-xs font-medium px-4 py-2.5 rounded-lg hover:bg-green-dark transition-colors">
+              <button className="bg-btn-bg text-white text-xs font-medium px-4 py-2.5 rounded-lg hover:bg-btn-bg-hover transition-colors">
                 Subscribe
               </button>
             </div>
@@ -61,10 +36,15 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Explore</h4>
             <ul className="space-y-2.5">
-              {["Cities", "Stories", "Reels"].map((item) => (
-                <li key={item}>
-                  <Link href={`/${item.toLowerCase()}`} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {item}
+              {[
+                { label: "Stories", href: "/stories/the-sound-of-the-new-south" },
+                { label: "Interviews", href: "/interviews" },
+                { label: "Reels", href: "/reels" },
+                { label: "Submit Your Story", href: "/submit" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -75,38 +55,55 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-white mb-4">Cities</h4>
             <ul className="space-y-2.5">
-              {["Breaking News", "World News", "Politics", "Business", "Health", "Crime", "Environment"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {item}
+              {[
+                { label: "Atlanta", href: "/city/atlanta" },
+                { label: "Houston", href: "/city/houston" },
+                { label: "Toronto", href: "/city/toronto" },
+                { label: "London", href: "/city/london" },
+                { label: "New York", href: "/city/new-york" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Connect */}
+          <div>
+            <h4 className="text-sm font-semibold text-white mb-4">Connect</h4>
+            <ul className="space-y-2.5">
+              {[
+                { label: "Instagram", href: "#" },
+                { label: "Twitter / X", href: "#" },
+                { label: "TikTok", href: "#" },
+                { label: "YouTube", href: "#" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
                   </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Eye Watch */}
+          {/* About */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Eye Watch</h4>
+            <h4 className="text-sm font-semibold text-white mb-4">About</h4>
             <ul className="space-y-2.5">
-              {["Submit a Report", "Top Reports", "How It Works"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* About Us */}
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-4">About Us</h4>
-            <ul className="space-y-2.5">
-              {["Our Mission", "Careers", "The Team", "Partnerships", "Press & Media", "Contact Us"].map((item) => (
-                <li key={item}>
-                  <a href="#" className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {item}
+              {[
+                { label: "Our Mission", href: "#" },
+                { label: "The Team", href: "#" },
+                { label: "Advertise With Us", href: "#" },
+                { label: "Partnerships", href: "#" },
+                { label: "Contact Us", href: "#" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="text-sm text-gray-400 hover:text-white transition-colors">
+                    {item.label}
                   </a>
                 </li>
               ))}

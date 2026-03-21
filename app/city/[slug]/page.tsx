@@ -66,7 +66,7 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {cityArticles.map((article) => (
                 <Link key={article.slug} href={`/stories/${article.slug}`} className="group block">
-                  <div className="relative aspect-[3/2] overflow-hidden mb-4">
+                  <div className="relative aspect-[3/2] overflow-hidden rounded-2xl mb-4">
                     <Image
                       src={article.featuredImage}
                       alt={article.title}
@@ -95,7 +95,7 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {cityInterviews.map((interview) => (
                 <Link key={interview.slug} href={`/interviews/${interview.slug}`} className="group block">
-                  <div className="relative aspect-[3/4] overflow-hidden mb-4">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-2xl mb-4">
                     <Image
                       src={interview.portrait}
                       alt={interview.name}
@@ -123,7 +123,7 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {cityReels.map((reel) => (
                 <Link key={reel.id} href="/reels" className="group block">
-                  <div className="relative aspect-[9/16] overflow-hidden mb-3">
+                  <div className="relative aspect-[9/16] overflow-hidden rounded-2xl mb-3">
                     <Image
                       src={reel.thumbnail}
                       alt={reel.title}

@@ -22,7 +22,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
         <div className="mx-auto max-w-[1280px]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
             {/* Portrait */}
-            <div className="relative aspect-[3/4] overflow-hidden">
+            <div className="relative aspect-[3/4] overflow-hidden rounded-2xl">
               <Image
                 src={interview.portrait}
                 alt={interview.name}
@@ -74,7 +74,7 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {relatedInterviews.map((related) => (
               <Link key={related.slug} href={`/interviews/${related.slug}`} className="group block">
-                <div className="relative aspect-[3/4] overflow-hidden mb-4">
+                <div className="relative aspect-[3/4] overflow-hidden rounded-2xl mb-4">
                   <Image
                     src={related.portrait}
                     alt={related.name}

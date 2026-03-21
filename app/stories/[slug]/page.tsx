@@ -19,7 +19,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       {/* Featured Image */}
-      <section className="relative w-full h-[70vh] min-h-[500px] overflow-hidden">
+      <section className="relative w-full h-[70vh] min-h-[500px] overflow-hidden md:rounded-2xl">
         <Image
           src={article.featuredImage}
           alt={article.title}
@@ -110,7 +110,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <div className="my-12">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {article.gallery.map((img, i) => (
-                  <div key={i} className="relative aspect-[4/3] overflow-hidden">
+                  <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl">
                     <Image
                       src={img}
                       alt={`${article.title} gallery image ${i + 1}`}
@@ -193,7 +193,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {relatedArticles.map((related) => (
               <Link key={related.slug} href={`/stories/${related.slug}`} className="group block">
-                <div className="relative aspect-[3/2] overflow-hidden mb-4">
+                <div className="relative aspect-[3/2] overflow-hidden rounded-2xl mb-4">
                   <Image
                     src={related.featuredImage}
                     alt={related.title}

@@ -5,14 +5,14 @@ interface BadgeProps {
 
 export default function Badge({ children, variant = "city" }: BadgeProps) {
   const styles = {
-    city: "bg-accent/15 text-accent",
-    sponsored: "bg-sponsored/15 text-sponsored",
-    category: "bg-dark/10 text-dark",
+    city: "bg-accent/20 text-accent",
+    sponsored: "bg-accent/20 text-accent",
+    category: "bg-white/10 text-cream/70",
   };
 
   return (
     <span
-      className={`inline-block text-[11px] font-medium uppercase tracking-[0.12em] px-3 py-1 ${styles[variant]}`}
+      className={`inline-block text-[10px] font-bold uppercase tracking-[0.15em] px-3 py-1 ${styles[variant]}`}
     >
       {children}
     </span>
