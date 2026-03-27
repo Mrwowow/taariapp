@@ -232,7 +232,7 @@ export async function updateArticle(slug: string, data: Partial<Article>): Promi
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
@@ -307,7 +307,7 @@ export async function updateInterview(slug: string, data: Partial<Interview>): P
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
@@ -378,7 +378,7 @@ export async function updateReel(id: string, data: Partial<Reel>): Promise<Reel 
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.caption !== undefined) { fields.push('caption = ?'); values.push(data.caption); }
@@ -428,7 +428,7 @@ export async function updateSponsor(id: string, data: Partial<Sponsor>): Promise
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
   if (data.logo !== undefined) { fields.push('logo = ?'); values.push(data.logo); }
@@ -527,7 +527,7 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id'>>): P
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
-  const values: unknown[] = [];
+  const values: (string | number | boolean | null)[] = [];
 
   if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
   if (data.email !== undefined) { fields.push('email = ?'); values.push(data.email); }
