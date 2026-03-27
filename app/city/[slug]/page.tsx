@@ -3,7 +3,6 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import SectionHeader from "@/components/ui/SectionHeader";
 import {
-  getCities,
   getCityBySlug,
   getArticlesByCity,
   getInterviewsByCity,
@@ -12,10 +11,7 @@ import {
 } from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export async function generateStaticParams() {
-  const cities = await getCities();
-  return cities.map((city) => ({ slug: city.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function CityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

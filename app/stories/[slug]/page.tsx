@@ -5,10 +5,7 @@ import NewsletterForm from "@/components/ui/NewsletterForm";
 import { getArticles, getArticleBySlug } from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export async function generateStaticParams() {
-  const articles = await getArticles();
-  return articles.map((a) => ({ slug: a.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

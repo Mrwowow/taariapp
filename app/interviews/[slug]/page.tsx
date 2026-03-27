@@ -1,13 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
-import { getInterviews, getInterviewBySlug } from "@/lib/store";
+import { getInterviewBySlug, getInterviews } from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export async function generateStaticParams() {
-  const interviews = await getInterviews();
-  return interviews.map((i) => ({ slug: i.slug }));
-}
+export const dynamic = 'force-dynamic';
 
 export default async function InterviewDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
