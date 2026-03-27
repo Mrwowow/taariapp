@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 const CITIES = ['Atlanta', 'Houston', 'Toronto', 'London', 'New York', 'Other'];
 const ROLES = ['admin', 'editor', 'contributor', 'reader'] as const;
@@ -14,6 +15,7 @@ export default function NewUserPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'contributor' as typeof ROLES[number],
     city: '',
     avatar: '',
@@ -83,6 +85,19 @@ export default function NewUserPage() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Password <span className="text-[#C8956C]">*</span></label>
+          <input
+            required
+            type="password"
+            value={form.password}
+            onChange={(e) => set('password', e.target.value)}
+            minLength={6}
+            className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A]"
+            placeholder="At least 6 characters"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Role <span className="text-[#C8956C]">*</span></label>
           <select
             required
@@ -111,16 +126,13 @@ export default function NewUserPage() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-          <input
-            type="url"
-            value={form.avatar}
-            onChange={(e) => set('avatar', e.target.value)}
-            className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1A1A1A]"
-            placeholder="https://... (leave blank for auto-generated)"
-          />
-        </div>
+        <ImageUpload
+          value={form.avatar}
+          onChange={(url) => set('avatar', url)}
+          folder="taari/avatars"
+          label="Profile Picture"
+          aspect="aspect-square"
+        />
 
         <div className="flex gap-3 pt-2">
           <button

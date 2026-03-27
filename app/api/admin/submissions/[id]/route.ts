@@ -7,7 +7,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
-  const submission = getSubmissionById(id);
+  const submission = await getSubmissionById(id);
   if (!submission) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(submission);
 }
@@ -22,7 +22,7 @@ export async function PATCH(
   if (!['pending', 'approved', 'rejected'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
-  const updated = updateSubmissionStatus(id, status);
+  const updated = await updateSubmissionStatus(id, status);
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(updated);
 }

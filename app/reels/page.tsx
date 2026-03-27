@@ -1,15 +1,35 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
-import { reels, cities } from "@/lib/data";
+import type { Reel, City } from "@/lib/store";
 
 export default function ReelsPage() {
   const [activeCity, setActiveCity] = useState<string>("all");
+  const [reels, setReels] = useState<Reel[]>([]);
+  const [cities, setCities] = useState<City[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/admin/reels").then((r) => r.json()),
+      fetch("/api/admin/cities").then((r) => r.json()),
+    ]).then(([reelsData, citiesData]) => {
+      setReels(reelsData);
+      setCities(citiesData);
+      setLoading(false);
+    });
+  }, []);
 
   const filteredReels =
     activeCity === "all" ? reels : reels.filter((r) => r.city.slug === activeCity);
+
+  if (loading) {
+    return (
+      <div className="py-16 px-6 text-center text-muted">Loading...</div>
+    );
+  }
 
   return (
     <div className="py-16 px-6">

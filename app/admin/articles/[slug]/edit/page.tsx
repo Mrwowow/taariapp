@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
-import { cities } from '@/lib/data';
-import type { Article } from '@/lib/store';
+import ImageUpload from '@/components/admin/ImageUpload';
+import type { Article, City } from '@/lib/store';
 
 const CATEGORIES = ['Culture', 'Music', 'Art', 'Food', 'Community', 'Fashion', 'Tech'];
 
@@ -22,13 +22,14 @@ export default function EditArticlePage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
 
   const [form, setForm] = useState({
     title: '',
     slug: '',
     excerpt: '',
     body: '',
-    citySlug: cities[0].slug,
+    citySlug: '',
     categories: [] as string[],
     isSponsored: false,
     authorName: '',
@@ -38,24 +39,26 @@ export default function EditArticlePage() {
   });
 
   useEffect(() => {
-    fetch(`/api/admin/articles/${slug}`)
-      .then((r) => r.json())
-      .then((a: Article) => {
-        setForm({
-          title: a.title,
-          slug: a.slug,
-          excerpt: a.excerpt,
-          body: a.body.join('\n'),
-          citySlug: a.city.slug,
-          categories: a.categories,
-          isSponsored: a.isSponsored,
-          authorName: a.author.name,
-          readTime: String(a.readTime),
-          featuredImage: a.featuredImage,
-          publishedAt: a.publishedAt,
-        });
-        setLoading(false);
+    Promise.all([
+      fetch(`/api/admin/articles/${slug}`).then((r) => r.json()),
+      fetch('/api/admin/cities').then((r) => r.json()),
+    ]).then(([a, citiesData]: [Article, City[]]) => {
+      setCities(citiesData);
+      setForm({
+        title: a.title,
+        slug: a.slug,
+        excerpt: a.excerpt,
+        body: a.body.join('\n'),
+        citySlug: a.city.slug,
+        categories: a.categories,
+        isSponsored: a.isSponsored,
+        authorName: a.author.name,
+        readTime: String(a.readTime),
+        featuredImage: a.featuredImage,
+        publishedAt: a.publishedAt,
       });
+      setLoading(false);
+    });
   }, [slug]);
 
   function toggleCategory(cat: string) {
@@ -215,14 +218,13 @@ export default function EditArticlePage() {
           </div>
         </FormField>
 
-        <FormField label="Featured Image URL" htmlFor="featuredImage">
-          <input
-            id="featuredImage"
-            className={inputClass}
-            value={form.featuredImage}
-            onChange={(e) => setForm((f) => ({ ...f, featuredImage: e.target.value }))}
-          />
-        </FormField>
+        <ImageUpload
+          value={form.featuredImage}
+          onChange={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
+          folder="taari/articles"
+          label="Featured Image"
+          aspect="aspect-video"
+        />
 
         <FormField label="Author Name" htmlFor="authorName">
           <input

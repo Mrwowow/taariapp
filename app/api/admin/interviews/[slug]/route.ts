@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const interview = getInterviewBySlug(slug);
+  const interview = await getInterviewBySlug(slug);
   if (!interview) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(interview);
 }
@@ -17,7 +17,7 @@ export async function PUT(
 ) {
   const { slug } = await params;
   const body = await req.json();
-  const updated = updateInterview(slug, body);
+  const updated = await updateInterview(slug, body);
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(updated);
 }
@@ -27,7 +27,7 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const ok = deleteInterview(slug);
+  const ok = await deleteInterview(slug);
   if (!ok) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ success: true });
 }

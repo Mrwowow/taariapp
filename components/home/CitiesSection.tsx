@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { articles } from "@/lib/data";
+import { getArticles } from "@/lib/store";
 
-export default function CitiesSection() {
+export default async function CitiesSection() {
+  const articles = await getArticles();
   const cityStories = articles.slice(0, 6);
 
   return (

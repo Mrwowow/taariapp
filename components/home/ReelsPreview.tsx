@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import SectionHeader from "@/components/ui/SectionHeader";
-import { reels } from "@/lib/data";
+import { getReels } from "@/lib/store";
 
-export default function ReelsPreview() {
+export default async function ReelsPreview() {
+  const reels = await getReels();
   const displayReels = reels.slice(0, 4);
 
   return (

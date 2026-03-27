@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { addNewsletterSubscriber } from "@/lib/store";
 
 export async function POST(request: Request) {
   const { email } = await request.json();
@@ -7,8 +8,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
   }
 
-  // In production: call ConvertKit/Mailchimp API
-  // const res = await fetch(`https://api.convertkit.com/v3/forms/${FORM_ID}/subscribe`, { ... })
+  const added = await addNewsletterSubscriber(email);
+  if (!added) {
+    return NextResponse.json({ success: true, message: "Already subscribed" });
+  }
 
   return NextResponse.json({ success: true, message: "Subscribed successfully" });
 }

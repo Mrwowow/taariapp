@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
-import { cities } from '@/lib/data';
-import type { Reel } from '@/lib/store';
+import ImageUpload from '@/components/admin/ImageUpload';
+import type { Reel, City } from '@/lib/store';
 
 const inputClass =
   'border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A] text-sm';
@@ -16,27 +16,30 @@ export default function EditReelPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
   const [form, setForm] = useState({
     title: '',
     caption: '',
     thumbnail: '',
-    citySlug: cities[0].slug,
+    citySlug: '',
     publishedAt: '',
   });
 
   useEffect(() => {
-    fetch(`/api/admin/reels/${id}`)
-      .then((r) => r.json())
-      .then((r: Reel) => {
-        setForm({
-          title: r.title,
-          caption: r.caption,
-          thumbnail: r.thumbnail,
-          citySlug: r.city.slug,
-          publishedAt: r.publishedAt,
-        });
-        setLoading(false);
+    Promise.all([
+      fetch(`/api/admin/reels/${id}`).then((r) => r.json()),
+      fetch('/api/admin/cities').then((r) => r.json()),
+    ]).then(([r, citiesData]: [Reel, City[]]) => {
+      setCities(citiesData);
+      setForm({
+        title: r.title,
+        caption: r.caption,
+        thumbnail: r.thumbnail,
+        citySlug: r.city.slug,
+        publishedAt: r.publishedAt,
       });
+      setLoading(false);
+    });
   }, [id]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -112,14 +115,13 @@ export default function EditReelPage() {
           />
         </FormField>
 
-        <FormField label="Thumbnail URL" htmlFor="thumbnail">
-          <input
-            id="thumbnail"
-            className={inputClass}
-            value={form.thumbnail}
-            onChange={(e) => setForm((f) => ({ ...f, thumbnail: e.target.value }))}
-          />
-        </FormField>
+        <ImageUpload
+          value={form.thumbnail}
+          onChange={(url) => setForm((f) => ({ ...f, thumbnail: url }))}
+          folder="taari/reels"
+          label="Thumbnail"
+          aspect="aspect-[9/16]"
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <FormField label="City" htmlFor="city">

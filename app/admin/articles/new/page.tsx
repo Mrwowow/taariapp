@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
-import { cities } from '@/lib/data';
+import ImageUpload from '@/components/admin/ImageUpload';
+import type { City } from '@/lib/store';
 
 const CATEGORIES = ['Culture', 'Music', 'Art', 'Food', 'Community', 'Fashion', 'Tech'];
 
@@ -24,13 +25,15 @@ export default function NewArticlePage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingCities, setLoadingCities] = useState(true);
 
   const [form, setForm] = useState({
     title: '',
     slug: '',
     excerpt: '',
     body: '',
-    citySlug: cities[0].slug,
+    citySlug: '',
     categories: [] as string[],
     isSponsored: false,
     authorName: '',
@@ -38,6 +41,18 @@ export default function NewArticlePage() {
     featuredImage: '',
     publishedAt: new Date().toISOString().slice(0, 10),
   });
+
+  useEffect(() => {
+    fetch('/api/admin/cities')
+      .then((r) => r.json())
+      .then((data: City[]) => {
+        setCities(data);
+        if (data.length > 0) {
+          setForm((f) => ({ ...f, citySlug: data[0].slug }));
+        }
+        setLoadingCities(false);
+      });
+  }, []);
 
   function handleTitleChange(title: string) {
     setForm((f) => ({ ...f, title, slug: slugify(title) }));
@@ -92,6 +107,10 @@ export default function NewArticlePage() {
       setError('Failed to create article.');
       setSaving(false);
     }
+  }
+
+  if (loadingCities) {
+    return <div className="text-[#6B6B6B] text-sm py-8 text-center">Loading...</div>;
   }
 
   return (
@@ -200,15 +219,13 @@ export default function NewArticlePage() {
           </div>
         </FormField>
 
-        <FormField label="Featured Image URL" htmlFor="featuredImage">
-          <input
-            id="featuredImage"
-            className={inputClass}
-            value={form.featuredImage}
-            onChange={(e) => setForm((f) => ({ ...f, featuredImage: e.target.value }))}
-            placeholder="https://images.unsplash.com/…"
-          />
-        </FormField>
+        <ImageUpload
+          value={form.featuredImage}
+          onChange={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
+          folder="taari/articles"
+          label="Featured Image"
+          aspect="aspect-video"
+        />
 
         <FormField label="Author Name" htmlFor="authorName">
           <input

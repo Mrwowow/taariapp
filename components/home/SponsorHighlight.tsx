@@ -1,6 +1,7 @@
-import { sponsors } from "@/lib/data";
+import { getSponsors } from "@/lib/store";
 
-export default function SponsorHighlight() {
+export default async function SponsorHighlight() {
+  const sponsors = await getSponsors();
   const sponsor = sponsors[0];
 
   return (

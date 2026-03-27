@@ -2,9 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import SectionHeader from "@/components/ui/SectionHeader";
-import { articles } from "@/lib/data";
+import { getArticles } from "@/lib/store";
 
-export default function FeaturedStory() {
+export default async function FeaturedStory() {
+  const articles = await getArticles();
   const featured = articles[1];
 
   return (
