@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { articles } from "@/lib/data";
+import { getArticles } from "@/lib/store";
 
-export default function TopStories() {
+export default async function TopStories() {
+  const articles = await getArticles();
   const topStories = articles.slice(0, 4);
 
   return (

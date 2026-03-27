@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createSubmission } from "@/lib/store";
 
 export async function POST(request: Request) {
   const data = await request.json();
@@ -9,8 +10,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
   }
 
-  // In production: store in Sanity as submission document
-  // const result = await sanityClient.create({ _type: 'submission', ...data, status: 'pending' })
+  await createSubmission({
+    name,
+    email,
+    city,
+    summary,
+    videoLink: data.videoLink ?? '',
+    socialHandles: data.socialHandles ?? '',
+    imageUrls: data.imageUrls ?? [],
+  });
 
   return NextResponse.json({
     success: true,

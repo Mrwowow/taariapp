@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
+import ImageUpload from '@/components/admin/ImageUpload';
 
 const inputClass =
   'border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A] text-sm';
@@ -92,15 +93,13 @@ export default function NewSponsorPage() {
           />
         </FormField>
 
-        <FormField label="Logo URL" htmlFor="logo" hint="Image URL or SVG path">
-          <input
-            id="logo"
-            className={inputClass}
-            value={form.logo}
-            onChange={(e) => setForm((f) => ({ ...f, logo: e.target.value }))}
-            placeholder="https://… or /images/logo.svg"
-          />
-        </FormField>
+        <ImageUpload
+          value={form.logo}
+          onChange={(url) => setForm((f) => ({ ...f, logo: url }))}
+          folder="taari/sponsors"
+          label="Logo"
+          aspect="aspect-square"
+        />
 
         <div className="flex gap-3 pt-2">
           <button

@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
-import { interviews } from "@/lib/data";
+import { getInterviews } from "@/lib/store";
 
-export default function InterviewsPage() {
+export default async function InterviewsPage() {
+  const interviews = await getInterviews();
   return (
     <div className="py-16 px-6">
       <div className="mx-auto max-w-[1280px]">

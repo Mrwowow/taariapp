@@ -60,7 +60,7 @@ export default function Navbar() {
               Submit Your Story
             </Link>
             <Link
-              href="#"
+              href="/login"
               className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-white transition-colors px-3 py-2.5"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -71,7 +71,7 @@ export default function Navbar() {
               Sign In
             </Link>
             <Link
-              href="#"
+              href="/register"
               className="flex items-center gap-1.5 text-sm font-medium text-gray-300 hover:text-white border border-gray-600 rounded-lg px-4 py-2.5 hover:border-gray-400 transition-colors"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

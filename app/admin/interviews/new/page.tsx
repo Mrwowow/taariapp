@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
-import { cities } from '@/lib/data';
+import ImageUpload from '@/components/admin/ImageUpload';
+import type { City } from '@/lib/store';
 
 function slugify(str: string) {
   return str.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
@@ -19,17 +20,31 @@ export default function NewInterviewPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
+  const [loadingCities, setLoadingCities] = useState(true);
   const [form, setForm] = useState({
     title: '',
     name: '',
     slug: '',
     bio: '',
     oneLiner: '',
-    citySlug: cities[0].slug,
+    citySlug: '',
     portrait: '',
     publishedAt: new Date().toISOString().slice(0, 10),
   });
   const [qas, setQas] = useState<QA[]>([{ question: '', answer: '' }]);
+
+  useEffect(() => {
+    fetch('/api/admin/cities')
+      .then((r) => r.json())
+      .then((data: City[]) => {
+        setCities(data);
+        if (data.length > 0) {
+          setForm((f) => ({ ...f, citySlug: data[0].slug }));
+        }
+        setLoadingCities(false);
+      });
+  }, []);
 
   function handleNameChange(name: string) {
     setForm((f) => ({ ...f, name, slug: slugify(name) }));
@@ -76,6 +91,10 @@ export default function NewInterviewPage() {
       setError('Failed to create interview.');
       setSaving(false);
     }
+  }
+
+  if (loadingCities) {
+    return <div className="text-[#6B6B6B] text-sm py-8 text-center">Loading...</div>;
   }
 
   return (
@@ -174,15 +193,13 @@ export default function NewInterviewPage() {
           </FormField>
         </div>
 
-        <FormField label="Portrait URL" htmlFor="portrait">
-          <input
-            id="portrait"
-            className={inputClass}
-            value={form.portrait}
-            onChange={(e) => setForm((f) => ({ ...f, portrait: e.target.value }))}
-            placeholder="https://images.unsplash.com/…"
-          />
-        </FormField>
+        <ImageUpload
+          value={form.portrait}
+          onChange={(url) => setForm((f) => ({ ...f, portrait: url }))}
+          folder="taari/interviews"
+          label="Portrait Image"
+          aspect="aspect-[3/4]"
+        />
 
         {/* Q&A */}
         <div className="space-y-3">

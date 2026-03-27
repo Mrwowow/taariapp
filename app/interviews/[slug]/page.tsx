@@ -1,18 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
-import { interviews, getInterviewBySlug } from "@/lib/data";
+import { getInterviews, getInterviewBySlug } from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const interviews = await getInterviews();
   return interviews.map((i) => ({ slug: i.slug }));
 }
 
 export default async function InterviewDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const interview = getInterviewBySlug(slug);
+  const interview = await getInterviewBySlug(slug);
   if (!interview) notFound();
 
+  const interviews = await getInterviews();
   const relatedInterviews = interviews.filter((i) => i.slug !== slug).slice(0, 3);
 
   return (

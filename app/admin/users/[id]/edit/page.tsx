@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import ImageUpload from '@/components/admin/ImageUpload';
 import type { User } from '@/lib/store';
 
 const CITIES = ['Atlanta', 'Houston', 'Toronto', 'London', 'New York', 'Other'];
@@ -17,6 +18,7 @@ export default function EditUserPage() {
   const [form, setForm] = useState({
     name: '',
     email: '',
+    password: '',
     role: 'contributor',
     city: '',
     avatar: '',
@@ -30,6 +32,7 @@ export default function EditUserPage() {
         setForm({
           name: user.name,
           email: user.email,
+          password: '',
           role: user.role,
           city: user.city ?? '',
           avatar: user.avatar ?? '',
@@ -103,6 +106,19 @@ export default function EditUserPage() {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+          <input
+            type="password"
+            value={form.password}
+            onChange={(e) => set('password', e.target.value)}
+            minLength={6}
+            className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A]"
+            placeholder="Leave blank to keep current password"
+          />
+          <p className="text-xs text-[#6B6B6B] mt-1">Only fill this if you want to change the password.</p>
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
           <select
             value={form.role}
@@ -139,19 +155,13 @@ export default function EditUserPage() {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Avatar URL</label>
-          <input
-            type="url"
-            value={form.avatar}
-            onChange={(e) => set('avatar', e.target.value)}
-            className="w-full border border-gray-200 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#1A1A1A]"
-            placeholder="https://..."
-          />
-          {form.avatar && (
-            <img src={form.avatar} alt="avatar preview" className="w-12 h-12 rounded-full object-cover mt-2" />
-          )}
-        </div>
+        <ImageUpload
+          value={form.avatar}
+          onChange={(url) => set('avatar', url)}
+          folder="taari/avatars"
+          label="Profile Picture"
+          aspect="aspect-square"
+        />
 
         <div className="flex gap-3 pt-2">
           <button

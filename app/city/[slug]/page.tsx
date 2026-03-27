@@ -3,27 +3,29 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import SectionHeader from "@/components/ui/SectionHeader";
 import {
-  cities,
+  getCities,
   getCityBySlug,
   getArticlesByCity,
   getInterviewsByCity,
   getReelsByCity,
-  sponsors,
-} from "@/lib/data";
+  getSponsors,
+} from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const cities = await getCities();
   return cities.map((city) => ({ slug: city.slug }));
 }
 
 export default async function CityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const city = getCityBySlug(slug);
+  const city = await getCityBySlug(slug);
   if (!city) notFound();
 
-  const cityArticles = getArticlesByCity(slug);
-  const cityInterviews = getInterviewsByCity(slug);
-  const cityReels = getReelsByCity(slug);
+  const cityArticles = await getArticlesByCity(slug);
+  const cityInterviews = await getInterviewsByCity(slug);
+  const cityReels = await getReelsByCity(slug);
+  const sponsors = await getSponsors();
 
   return (
     <>

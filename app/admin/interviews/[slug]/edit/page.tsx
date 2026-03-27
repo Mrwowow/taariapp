@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
-import { cities } from '@/lib/data';
-import type { Interview } from '@/lib/store';
+import ImageUpload from '@/components/admin/ImageUpload';
+import type { Interview, City } from '@/lib/store';
 
 const inputClass =
   'border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A] text-sm';
@@ -18,35 +18,38 @@ export default function EditInterviewPage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [cities, setCities] = useState<City[]>([]);
   const [form, setForm] = useState({
     title: '',
     name: '',
     slug: '',
     bio: '',
     oneLiner: '',
-    citySlug: cities[0].slug,
+    citySlug: '',
     portrait: '',
     publishedAt: '',
   });
   const [qas, setQas] = useState<QA[]>([{ question: '', answer: '' }]);
 
   useEffect(() => {
-    fetch(`/api/admin/interviews/${slug}`)
-      .then((r) => r.json())
-      .then((i: Interview) => {
-        setForm({
-          title: i.title,
-          name: i.name,
-          slug: i.slug,
-          bio: i.bio,
-          oneLiner: i.oneLiner,
-          citySlug: i.city.slug,
-          portrait: i.portrait,
-          publishedAt: i.publishedAt,
-        });
-        setQas(i.questions.length ? i.questions : [{ question: '', answer: '' }]);
-        setLoading(false);
+    Promise.all([
+      fetch(`/api/admin/interviews/${slug}`).then((r) => r.json()),
+      fetch('/api/admin/cities').then((r) => r.json()),
+    ]).then(([i, citiesData]: [Interview, City[]]) => {
+      setCities(citiesData);
+      setForm({
+        title: i.title,
+        name: i.name,
+        slug: i.slug,
+        bio: i.bio,
+        oneLiner: i.oneLiner,
+        citySlug: i.city.slug,
+        portrait: i.portrait,
+        publishedAt: i.publishedAt,
       });
+      setQas(i.questions.length ? i.questions : [{ question: '', answer: '' }]);
+      setLoading(false);
+    });
   }, [slug]);
 
   function updateQA(idx: number, field: keyof QA, value: string) {
@@ -185,14 +188,13 @@ export default function EditInterviewPage() {
           </FormField>
         </div>
 
-        <FormField label="Portrait URL" htmlFor="portrait">
-          <input
-            id="portrait"
-            className={inputClass}
-            value={form.portrait}
-            onChange={(e) => setForm((f) => ({ ...f, portrait: e.target.value }))}
-          />
-        </FormField>
+        <ImageUpload
+          value={form.portrait}
+          onChange={(url) => setForm((f) => ({ ...f, portrait: url }))}
+          folder="taari/interviews"
+          label="Portrait Image"
+          aspect="aspect-[3/4]"
+        />
 
         {/* Q&A */}
         <div className="space-y-3">

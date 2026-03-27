@@ -2,18 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
-import { articles, getArticleBySlug } from "@/lib/data";
+import { getArticles, getArticleBySlug } from "@/lib/store";
 import { notFound } from "next/navigation";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
+  const articles = await getArticles();
   return articles.map((a) => ({ slug: a.slug }));
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = getArticleBySlug(slug);
+  const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
+  const articles = await getArticles();
   const relatedArticles = articles.filter((a) => a.slug !== slug).slice(0, 3);
 
   return (

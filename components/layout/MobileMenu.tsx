@@ -34,8 +34,8 @@ export default function MobileMenu({ open, onClose, links }: MobileMenuProps) {
           Submit Your Story
         </Link>
         <div className="flex gap-3">
-          <Link href="#" className="flex-1 text-center text-sm font-medium text-gray-600 py-3 border border-gray-200 rounded-lg">Sign In</Link>
-          <Link href="#" className="flex-1 text-center text-sm font-medium text-gray-600 py-3 border border-gray-200 rounded-lg">Create Account</Link>
+          <Link href="/login" onClick={onClose} className="flex-1 text-center text-sm font-medium text-gray-600 py-3 border border-gray-200 rounded-lg">Sign In</Link>
+          <Link href="/register" onClick={onClose} className="flex-1 text-center text-sm font-medium text-gray-600 py-3 border border-gray-200 rounded-lg">Create Account</Link>
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { articles } from "@/lib/data";
+import { getArticles } from "@/lib/store";
 
-export default function Hero() {
+export default async function Hero() {
+  const articles = await getArticles();
   const featured = articles[0];
 
   return (
