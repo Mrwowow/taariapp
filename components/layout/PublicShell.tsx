@@ -8,8 +8,9 @@ export default function PublicShell({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
   const isAuth = pathname === "/login" || pathname === "/register";
+  const isLaunch = pathname === "/";
 
-  if (isAdmin || isAuth) return <>{children}</>;
+  if (isAdmin || isAuth || isLaunch) return <>{children}</>;
 
   return (
     <>
