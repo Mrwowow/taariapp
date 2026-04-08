@@ -89,6 +89,19 @@ export interface User {
   avatar: string;
 }
 
+export interface ChangeMaker {
+  id: string;
+  name: string;
+  title: string;
+  bio: string;
+  photo: string;
+  category: string;
+  city: string;
+  year: number;
+  featured: boolean;
+  publishedAt: string;
+}
+
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 interface CityRow extends RowDataPacket {
@@ -136,6 +149,11 @@ interface SubmissionRow extends RowDataPacket {
 interface UserRow extends RowDataPacket {
   id: number; name: string; email: string; role: string; status: string;
   city: string; avatar: string; joined_at: string;
+}
+
+interface ChangeMakerRow extends RowDataPacket {
+  id: number; name: string; title: string; bio: string; photo: string;
+  category: string; city: string; year: number; featured: number; published_at: string;
 }
 
 async function rowToCity(row: CityRow): Promise<City> {
@@ -546,6 +564,67 @@ export async function updateUser(id: string, data: Partial<Omit<User, 'id'>>): P
 
 export async function deleteUser(id: string): Promise<boolean> {
   const [result] = await pool.execute<ResultSetHeader>('DELETE FROM users WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// ── Change Makers ───────────────────────────────────────────────────────────
+
+function rowToChangeMaker(row: ChangeMakerRow): ChangeMaker {
+  return {
+    id: String(row.id), name: row.name, title: row.title, bio: row.bio,
+    photo: row.photo, category: row.category, city: row.city,
+    year: row.year, featured: !!row.featured, publishedAt: row.published_at,
+  };
+}
+
+export async function getChangeMakers(): Promise<ChangeMaker[]> {
+  const [rows] = await pool.execute<ChangeMakerRow[]>('SELECT * FROM change_makers ORDER BY year DESC, name');
+  return rows.map(rowToChangeMaker);
+}
+
+export async function getChangeMakerById(id: string): Promise<ChangeMaker | undefined> {
+  const [rows] = await pool.execute<ChangeMakerRow[]>('SELECT * FROM change_makers WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToChangeMaker(rows[0]);
+}
+
+export async function createChangeMaker(data: Omit<ChangeMaker, 'id'>): Promise<ChangeMaker> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO change_makers (name, title, bio, photo, category, city, year, featured, published_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [data.name, data.title, data.bio, data.photo, data.category, data.city,
+     data.year, data.featured ? 1 : 0, data.publishedAt]
+  );
+  return (await getChangeMakerById(String(result.insertId)))!;
+}
+
+export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>): Promise<ChangeMaker | null> {
+  const [existing] = await pool.execute<ChangeMakerRow[]>('SELECT id FROM change_makers WHERE id = ?', [id]);
+  if (existing.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number | boolean | null)[] = [];
+
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+  if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
+  if (data.photo !== undefined) { fields.push('photo = ?'); values.push(data.photo); }
+  if (data.category !== undefined) { fields.push('category = ?'); values.push(data.category); }
+  if (data.city !== undefined) { fields.push('city = ?'); values.push(data.city); }
+  if (data.year !== undefined) { fields.push('year = ?'); values.push(data.year); }
+  if (data.featured !== undefined) { fields.push('featured = ?'); values.push(data.featured ? 1 : 0); }
+  if (data.publishedAt !== undefined) { fields.push('published_at = ?'); values.push(data.publishedAt); }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.execute(`UPDATE change_makers SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return (await getChangeMakerById(id)) ?? null;
+}
+
+export async function deleteChangeMaker(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM change_makers WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
 
