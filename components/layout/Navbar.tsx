@@ -9,6 +9,7 @@ const navLinks = [
   { label: "Stories", href: "/stories/the-sound-of-the-new-south" },
   { label: "Reels", href: "/reels" },
   { label: "Interviews", href: "/interviews" },
+  { label: "Change Makers", href: "/change-makers" },
 ];
 
 export default function Navbar() {

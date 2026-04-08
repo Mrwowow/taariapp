@@ -10,6 +10,7 @@ const navItems = [
   { label: 'Interviews', href: '/admin/interviews', icon: '◈' },
   { label: 'Reels', href: '/admin/reels', icon: '▶' },
   { label: 'Submissions', href: '/admin/submissions', icon: '◎' },
+  { label: 'Change Makers', href: '/admin/change-makers', icon: '★' },
   { label: 'Sponsors', href: '/admin/sponsors', icon: '◆' },
   { label: 'Users', href: '/admin/users', icon: '◉' },
 ];
