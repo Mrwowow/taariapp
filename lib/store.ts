@@ -156,8 +156,8 @@ interface ChangeMakerRow extends RowDataPacket {
   category: string; city: string; year: number; featured: number; published_at: string;
 }
 
-async function rowToCity(row: CityRow): Promise<City> {
-  return { name: row.name, slug: row.slug, heroImage: row.hero_image, description: row.description, storyCount: row.story_count };
+function rowToCity(row: CityRow): City & { id: string } {
+  return { id: String(row.id), name: row.name, slug: row.slug, heroImage: row.hero_image, description: row.description, storyCount: row.story_count };
 }
 
 async function getCityById(id: number): Promise<City> {
@@ -183,6 +183,45 @@ export async function getCityBySlug(slug: string): Promise<City | undefined> {
   const [rows] = await pool.execute<CityRow[]>('SELECT * FROM cities WHERE slug = ?', [slug]);
   if (rows.length === 0) return undefined;
   return rowToCity(rows[0]);
+}
+
+export async function getCityByIdPublic(id: string): Promise<(City & { id: string }) | undefined> {
+  const [rows] = await pool.execute<CityRow[]>('SELECT * FROM cities WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToCity(rows[0]);
+}
+
+export async function createCity(data: { name: string; slug: string; heroImage: string; description: string }): Promise<City & { id: string }> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO cities (name, slug, hero_image, description, story_count) VALUES (?, ?, ?, ?, 0)',
+    [data.name, data.slug, data.heroImage, data.description]
+  );
+  return (await getCityByIdPublic(String(result.insertId)))!;
+}
+
+export async function updateCity(id: string, data: Partial<{ name: string; slug: string; heroImage: string; description: string }>): Promise<(City & { id: string }) | null> {
+  const [existing] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE id = ?', [id]);
+  if (existing.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number)[] = [];
+
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
+  if (data.heroImage !== undefined) { fields.push('hero_image = ?'); values.push(data.heroImage); }
+  if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.execute(`UPDATE cities SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return (await getCityByIdPublic(id)) ?? null;
+}
+
+export async function deleteCity(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM cities WHERE id = ?', [id]);
+  return result.affectedRows > 0;
 }
 
 // ── Articles ─────────────────────────────────────────────────────────────────
