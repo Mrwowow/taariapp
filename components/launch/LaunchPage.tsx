@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import CountdownTimer from "./CountdownTimer";
 
 export default function LaunchPage() {
@@ -44,8 +45,15 @@ export default function LaunchPage() {
             </span>
           </div>
 
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold text-cream tracking-tight">
-            TAARi
+          <h1 className="flex justify-center">
+            <Image
+              src="/images/taarilogo.png"
+              alt="TAARi"
+              width={320}
+              height={120}
+              priority
+              className="w-48 sm:w-60 md:w-72 lg:w-80 h-auto"
+            />
           </h1>
 
           <p className="text-muted text-base sm:text-lg md:text-xl max-w-xl mx-auto leading-relaxed">
