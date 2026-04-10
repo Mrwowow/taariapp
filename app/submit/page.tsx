@@ -7,11 +7,41 @@ const CITIES = ["Atlanta", "Houston", "Toronto", "London", "New York", "Other"];
 
 export default function SubmitPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [charCount, setCharCount] = useState(0);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    city: '',
+    summary: '',
+    videoLink: '',
+    socialHandles: '',
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Something went wrong. Please try again.');
+        setSubmitting(false);
+      }
+    } catch {
+      setError('Network error. Please try again.');
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -53,6 +83,12 @@ export default function SubmitPage() {
         <div className="w-full h-[1px] bg-border mb-10" />
 
         {/* Form */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm mb-6">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div>
@@ -62,6 +98,8 @@ export default function SubmitPage() {
             <input
               type="text"
               required
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
               className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="Your full name"
             />
@@ -75,6 +113,8 @@ export default function SubmitPage() {
             <input
               type="email"
               required
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
               className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="you@example.com"
             />
@@ -87,8 +127,9 @@ export default function SubmitPage() {
             </label>
             <select
               required
+              value={form.city}
+              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
               className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors appearance-none"
-              defaultValue=""
             >
               <option value="" disabled>
                 Select a city
@@ -110,7 +151,11 @@ export default function SubmitPage() {
               required
               maxLength={500}
               rows={6}
-              onChange={(e) => setCharCount(e.target.value.length)}
+              value={form.summary}
+              onChange={(e) => {
+                setForm((f) => ({ ...f, summary: e.target.value }));
+                setCharCount(e.target.value.length);
+              }}
               className="w-full px-4 py-3 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors resize-none"
               placeholder="Tell us your story in a few words..."
             />
@@ -145,6 +190,8 @@ export default function SubmitPage() {
             </label>
             <input
               type="url"
+              value={form.videoLink}
+              onChange={(e) => setForm((f) => ({ ...f, videoLink: e.target.value }))}
               className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="https://"
             />
@@ -158,6 +205,8 @@ export default function SubmitPage() {
             </label>
             <input
               type="text"
+              value={form.socialHandles}
+              onChange={(e) => setForm((f) => ({ ...f, socialHandles: e.target.value }))}
               className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="@yourhandle"
             />
@@ -166,9 +215,10 @@ export default function SubmitPage() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full h-14 bg-dark text-cream text-xs font-medium uppercase tracking-[0.1em] hover:bg-accent transition-colors"
+            disabled={submitting}
+            className="w-full h-14 bg-dark text-cream text-xs font-medium uppercase tracking-[0.1em] hover:bg-accent transition-colors disabled:opacity-50"
           >
-            Submit Story
+            {submitting ? 'Submitting…' : 'Submit Story'}
           </button>
         </form>
       </div>
