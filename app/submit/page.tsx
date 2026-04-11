@@ -1,15 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 
 const CITIES = ["Atlanta", "Houston", "Toronto", "London", "New York", "Other"];
+const MAX_IMAGES = 5;
 
 export default function SubmitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [charCount, setCharCount] = useState(0);
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -18,6 +22,54 @@ export default function SubmitPage() {
     videoLink: '',
     socialHandles: '',
   });
+
+  async function uploadFiles(files: FileList | File[]) {
+    const remaining = MAX_IMAGES - imageUrls.length;
+    const toUpload = Array.from(files).slice(0, remaining);
+    if (toUpload.length === 0) return;
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > 10 * 1024 * 1024) {
+          setError(`${file.name} exceeds 10MB limit.`);
+          continue;
+        }
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('folder', 'taari/submissions');
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        if (res.ok) {
+          const data = await res.json();
+          uploaded.push(data.url);
+        }
+      }
+      setImageUrls((prev) => [...prev, ...uploaded]);
+    } catch {
+      setError('Image upload failed. Please try again.');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files) uploadFiles(e.target.files);
+    // reset so same file can be re-selected if removed
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    if (e.dataTransfer.files) uploadFiles(e.dataTransfer.files);
+  }
+
+  function removeImage(idx: number) {
+    setImageUrls((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +80,7 @@ export default function SubmitPage() {
       const res = await fetch('/api/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, imageUrls }),
       });
 
       if (res.ok) {
@@ -167,20 +219,66 @@ export default function SubmitPage() {
             <label className="block text-sm font-medium text-dark mb-2">
               Upload Images <span className="text-muted font-normal">(optional)</span>
             </label>
-            <div className="border-2 border-dashed border-border p-8 text-center hover:border-muted transition-colors cursor-pointer">
-              <div className="flex justify-center gap-4 mb-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="w-14 h-14 border border-border flex items-center justify-center text-muted text-2xl"
-                  >
-                    +
+
+            {imageUrls.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-3">
+                {imageUrls.map((url, idx) => (
+                  <div key={idx} className="relative w-20 h-20 border border-border overflow-hidden group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Upload ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute inset-0 bg-black/60 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      aria-label="Remove image"
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-muted">Drag & drop or click to upload</p>
-              <p className="text-xs text-muted mt-1">Max 5 images, 10MB each &middot; JPG, PNG, WebP</p>
+            )}
+
+            <div
+              onClick={() => !uploading && fileInputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              className={`border-2 border-dashed border-border p-8 text-center hover:border-muted transition-colors ${
+                uploading || imageUrls.length >= MAX_IMAGES ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
+              }`}
+            >
+              {uploading ? (
+                <p className="text-sm text-muted">Uploading…</p>
+              ) : imageUrls.length >= MAX_IMAGES ? (
+                <p className="text-sm text-muted">Maximum {MAX_IMAGES} images reached</p>
+              ) : (
+                <>
+                  <div className="flex justify-center gap-4 mb-4">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-14 h-14 border border-border flex items-center justify-center text-muted text-2xl"
+                      >
+                        +
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted">Drag &amp; drop or click to upload</p>
+                  <p className="text-xs text-muted mt-1">
+                    Max {MAX_IMAGES} images, 10MB each &middot; JPG, PNG, WebP
+                  </p>
+                </>
+              )}
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
 
           {/* Video Link */}

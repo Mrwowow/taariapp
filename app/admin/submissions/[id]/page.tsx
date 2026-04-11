@@ -115,7 +115,7 @@ export default function SubmissionDetailPage() {
 
         <div>
           <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Summary</p>
-          <p className="text-sm text-[#1A1A1A] leading-relaxed bg-gray-50 rounded-lg p-4">
+          <p className="text-sm text-[#1A1A1A] leading-relaxed bg-[#F3F4F6] rounded-lg p-4 whitespace-pre-wrap">
             {submission.summary}
           </p>
         </div>
