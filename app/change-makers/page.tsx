@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import Badge from "@/components/ui/Badge";
 import { getChangeMakers } from "@/lib/store";
