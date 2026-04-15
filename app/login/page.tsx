@@ -35,7 +35,7 @@ export default function LoginPage() {
       if (role === 'admin' || role === 'editor') {
         router.push('/admin');
       } else {
-        router.push('/');
+        router.push('/profile');
       }
       router.refresh();
     } catch {

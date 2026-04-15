@@ -32,6 +32,7 @@ export default function EditArticlePage() {
     citySlug: '',
     categories: [] as string[],
     isSponsored: false,
+    isFeatured: false,
     authorName: '',
     readTime: '5',
     featuredImage: '',
@@ -52,6 +53,7 @@ export default function EditArticlePage() {
         citySlug: a.city.slug,
         categories: a.categories,
         isSponsored: a.isSponsored,
+        isFeatured: a.isFeatured ?? false,
         authorName: a.author.name,
         readTime: String(a.readTime),
         featuredImage: a.featuredImage,
@@ -84,6 +86,7 @@ export default function EditArticlePage() {
       city,
       categories: form.categories,
       isSponsored: form.isSponsored,
+      isFeatured: form.isFeatured,
       author: {
         name: form.authorName || 'TAARi Staff',
         slug: slugify(form.authorName || 'taari-staff'),
@@ -245,15 +248,29 @@ export default function EditArticlePage() {
           />
         </FormField>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.isSponsored}
-            onChange={(e) => setForm((f) => ({ ...f, isSponsored: e.target.checked }))}
-            className="accent-[#C8956C]"
-          />
-          <span className="text-sm font-medium text-gray-700">Sponsored content</span>
-        </label>
+        <div className="flex flex-col gap-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
+              className="accent-[#C8956C]"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Featured (show in home hero slider)
+            </span>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isSponsored}
+              onChange={(e) => setForm((f) => ({ ...f, isSponsored: e.target.checked }))}
+              className="accent-[#C8956C]"
+            />
+            <span className="text-sm font-medium text-gray-700">Sponsored content</span>
+          </label>
+        </div>
 
         <div className="flex gap-3 pt-2">
           <button

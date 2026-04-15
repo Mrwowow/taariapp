@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import MobileMenu from "./MobileMenu";
 
@@ -17,19 +18,26 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 bg-dark">
+      <nav className="sticky top-0 z-50 bg-white">
         <div className="mx-auto max-w-[1320px] px-4 md:px-6 flex items-center justify-between h-[64px]">
-          <Link href="/" className="font-serif text-[26px] font-bold text-white tracking-tight shrink-0">
-            TAARi
+          <Link href="/" className="shrink-0 flex items-center">
+            <Image
+              src="/images/taarilogo.png"
+              alt="TAARi"
+              width={96}
+              height={38}
+              priority
+              className="h-8 w-auto"
+            />
           </Link>
 
           {/* Center: Nav links with dividers */}
-          <div className="hidden lg:flex items-center ml-10 border border-white/20 rounded-full px-2 py-1.5">
+          <div className="hidden lg:flex items-center ml-10 border border-black/20 rounded-full px-2 py-1.5">
             {navLinks.map((link, i) => (
               <div key={link.href} className="flex items-center">
                 <Link
                   href={link.href}
-                  className="text-sm font-medium text-white hover:text-accent transition-colors px-4 py-1"
+                  className="text-sm font-medium text-black hover:text-accent transition-colors px-4 py-1"
                 >
                   {link.label}
                 </Link>

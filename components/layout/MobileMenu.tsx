@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 
 interface MobileMenuProps {
   open: boolean;
@@ -14,7 +15,7 @@ export default function MobileMenu({ open, onClose, links }: MobileMenuProps) {
   return (
     <div className="fixed inset-0 z-[100] bg-white flex flex-col">
       <div className="flex items-center justify-between px-4 h-[64px] border-b border-gray-200">
-        <span className="font-serif text-[26px] font-bold text-dark">TAARi</span>
+        <Image src="/images/taarilogo.png" alt="TAARi" width={96} height={32} className="h-8 w-auto" />
         <button onClick={onClose} className="p-2" aria-label="Close menu">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="18" y1="6" x2="6" y2="18" />

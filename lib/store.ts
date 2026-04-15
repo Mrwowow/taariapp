@@ -4,6 +4,21 @@
 import pool from './db';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
+// Normalize a date input for MySQL DATE / DATETIME columns.
+// Accepts "YYYY-MM-DD", ISO 8601 ("2026-03-31T23:00:00.000Z"), or Date-like.
+// Returns "YYYY-MM-DD HH:MM:SS" in UTC, or null if invalid/empty.
+function toMysqlDate(input: unknown): string | null {
+  if (input == null || input === '') return null;
+  const s = typeof input === 'string' ? input : String(input);
+  // Already in MySQL form
+  if (/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/.test(s)) return s;
+  // Plain date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface City {
@@ -33,6 +48,7 @@ export interface Article {
   city: City;
   categories: string[];
   isSponsored: boolean;
+  isFeatured: boolean;
   publishedAt: string;
   readTime: number;
 }
@@ -89,6 +105,18 @@ export interface User {
   avatar: string;
 }
 
+export interface Banner {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  badge: string;
+  sortOrder: number;
+  active: boolean;
+}
+
 export interface ChangeMaker {
   id: string;
   name: string;
@@ -119,7 +147,7 @@ interface SocialLinkRow extends RowDataPacket {
 interface ArticleRow extends RowDataPacket {
   id: number; title: string; slug: string; featured_image: string; excerpt: string;
   body: string; author_id: number; city_id: number; categories: string;
-  is_sponsored: number; published_at: string; read_time: number;
+  is_sponsored: number; is_featured: number; published_at: string; read_time: number;
 }
 
 interface GalleryRow extends RowDataPacket {
@@ -237,13 +265,33 @@ async function rowToArticle(row: ArticleRow): Promise<Article> {
   return {
     title: row.title, slug: row.slug, featuredImage: row.featured_image,
     gallery: gallery.map(g => g.image_url), excerpt: row.excerpt, body, author, city, categories,
-    isSponsored: !!row.is_sponsored, publishedAt: row.published_at, readTime: row.read_time,
+    isSponsored: !!row.is_sponsored, isFeatured: !!row.is_featured,
+    publishedAt: row.published_at, readTime: row.read_time,
   };
 }
 
 export async function getArticles(): Promise<Article[]> {
   const [rows] = await pool.execute<ArticleRow[]>('SELECT * FROM articles ORDER BY published_at DESC');
   return Promise.all(rows.map(rowToArticle));
+}
+
+export async function getFeaturedArticles(): Promise<Article[]> {
+  try {
+    const [rows] = await pool.execute<ArticleRow[]>(
+      'SELECT * FROM articles WHERE is_featured = 1 ORDER BY published_at DESC'
+    );
+    return Promise.all(rows.map(rowToArticle));
+  } catch (err: unknown) {
+    // is_featured column may not exist yet (pre-migration). Fail soft.
+    if (
+      err && typeof err === 'object' && 'code' in err &&
+      ((err as { code: string }).code === 'ER_BAD_FIELD_ERROR' ||
+       (err as { code: string }).code === 'ER_NO_SUCH_TABLE')
+    ) {
+      return [];
+    }
+    throw err;
+  }
 }
 
 export async function getArticleBySlug(slug: string): Promise<Article | undefined> {
@@ -267,11 +315,12 @@ export async function createArticle(data: Article): Promise<Article> {
   const cityId = cityRows[0]?.id ?? 1;
 
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, categories, is_sponsored, published_at, read_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, categories, is_sponsored, is_featured, published_at, read_time)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.title, data.slug, data.featuredImage, data.excerpt, JSON.stringify(data.body),
      authorId, cityId, JSON.stringify(data.categories), data.isSponsored ? 1 : 0,
-     data.publishedAt, data.readTime]
+     data.isFeatured ? 1 : 0,
+     toMysqlDate(data.publishedAt), data.readTime]
   );
 
   if (data.gallery?.length) {
@@ -298,7 +347,8 @@ export async function updateArticle(slug: string, data: Partial<Article>): Promi
   if (data.body !== undefined) { fields.push('body = ?'); values.push(JSON.stringify(data.body)); }
   if (data.categories !== undefined) { fields.push('categories = ?'); values.push(JSON.stringify(data.categories)); }
   if (data.isSponsored !== undefined) { fields.push('is_sponsored = ?'); values.push(data.isSponsored ? 1 : 0); }
-  if (data.publishedAt !== undefined) { fields.push('published_at = ?'); values.push(data.publishedAt); }
+  if (data.isFeatured !== undefined) { fields.push('is_featured = ?'); values.push(data.isFeatured ? 1 : 0); }
+  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
   if (data.readTime !== undefined) { fields.push('read_time = ?'); values.push(data.readTime); }
 
   if (fields.length > 0) {
@@ -353,7 +403,7 @@ export async function createInterview(data: Interview): Promise<Interview> {
     `INSERT INTO interviews (title, slug, portrait, name, bio, city_id, one_liner, questions, published_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.title, data.slug, data.portrait, data.name, data.bio, cityId,
-     data.oneLiner, JSON.stringify(data.questions), data.publishedAt]
+     data.oneLiner, JSON.stringify(data.questions), toMysqlDate(data.publishedAt)]
   );
 
   return (await getInterviewBySlug(data.slug))!;
@@ -373,7 +423,7 @@ export async function updateInterview(slug: string, data: Partial<Interview>): P
   if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
   if (data.oneLiner !== undefined) { fields.push('one_liner = ?'); values.push(data.oneLiner); }
   if (data.questions !== undefined) { fields.push('questions = ?'); values.push(JSON.stringify(data.questions)); }
-  if (data.publishedAt !== undefined) { fields.push('published_at = ?'); values.push(data.publishedAt); }
+  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
 
   if (fields.length > 0) {
     values.push(slug);
@@ -424,7 +474,7 @@ export async function createReel(data: Reel): Promise<Reel> {
 
   const [result] = await pool.execute<ResultSetHeader>(
     'INSERT INTO reels (title, caption, thumbnail, city_id, published_at) VALUES (?, ?, ?, ?, ?)',
-    [data.title, data.caption, data.thumbnail, cityId, data.publishedAt]
+    [data.title, data.caption, data.thumbnail, cityId, toMysqlDate(data.publishedAt)]
   );
 
   return (await getReelById(String(result.insertId)))!;
@@ -440,7 +490,7 @@ export async function updateReel(id: string, data: Partial<Reel>): Promise<Reel 
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.caption !== undefined) { fields.push('caption = ?'); values.push(data.caption); }
   if (data.thumbnail !== undefined) { fields.push('thumbnail = ?'); values.push(data.thumbnail); }
-  if (data.publishedAt !== undefined) { fields.push('published_at = ?'); values.push(data.publishedAt); }
+  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
 
   if (fields.length > 0) {
     values.push(id);
@@ -542,6 +592,13 @@ export async function createSubmission(data: {
   return (await getSubmissionById(String(result.insertId)))!;
 }
 
+export async function getSubmissionsByEmail(email: string): Promise<Submission[]> {
+  const [rows] = await pool.execute<SubmissionRow[]>(
+    'SELECT * FROM submissions WHERE email = ? ORDER BY submitted_at DESC', [email]
+  );
+  return rows.map(rowToSubmission);
+}
+
 export async function updateSubmissionStatus(id: string, status: Submission['status']): Promise<Submission | null> {
   const [result] = await pool.execute<ResultSetHeader>(
     'UPDATE submissions SET status = ? WHERE id = ?', [status, id]
@@ -632,7 +689,7 @@ export async function createChangeMaker(data: Omit<ChangeMaker, 'id'>): Promise<
     `INSERT INTO change_makers (name, title, bio, photo, category, city, year, featured, published_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.name, data.title, data.bio, data.photo, data.category, data.city,
-     data.year, data.featured ? 1 : 0, data.publishedAt]
+     data.year, data.featured ? 1 : 0, toMysqlDate(data.publishedAt)]
   );
   return (await getChangeMakerById(String(result.insertId)))!;
 }
@@ -652,7 +709,7 @@ export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>):
   if (data.city !== undefined) { fields.push('city = ?'); values.push(data.city); }
   if (data.year !== undefined) { fields.push('year = ?'); values.push(data.year); }
   if (data.featured !== undefined) { fields.push('featured = ?'); values.push(data.featured ? 1 : 0); }
-  if (data.publishedAt !== undefined) { fields.push('published_at = ?'); values.push(data.publishedAt); }
+  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
 
   if (fields.length > 0) {
     values.push(id);
@@ -664,6 +721,99 @@ export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>):
 
 export async function deleteChangeMaker(id: string): Promise<boolean> {
   const [result] = await pool.execute<ResultSetHeader>('DELETE FROM change_makers WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// ── Banners ──────────────────────────────────────────────────────────────────
+
+interface BannerRow extends RowDataPacket {
+  id: number; title: string; subtitle: string | null; image: string;
+  cta_label: string | null; cta_url: string | null; badge: string | null;
+  sort_order: number; active: number;
+}
+
+function rowToBanner(row: BannerRow): Banner {
+  return {
+    id: String(row.id),
+    title: row.title,
+    subtitle: row.subtitle ?? '',
+    image: row.image,
+    ctaLabel: row.cta_label ?? '',
+    ctaUrl: row.cta_url ?? '',
+    badge: row.badge ?? '',
+    sortOrder: row.sort_order,
+    active: !!row.active,
+  };
+}
+
+export async function getBanners(): Promise<Banner[]> {
+  const [rows] = await pool.execute<BannerRow[]>('SELECT * FROM banners ORDER BY sort_order ASC, id ASC');
+  return rows.map(rowToBanner);
+}
+
+export async function getActiveBanners(): Promise<Banner[]> {
+  try {
+    const [rows] = await pool.execute<BannerRow[]>('SELECT * FROM banners WHERE active = 1 ORDER BY sort_order ASC, id ASC');
+    return rows.map(rowToBanner);
+  } catch (err: unknown) {
+    // Table may not exist yet (pre-migration). Fail soft so hero can fall back.
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ER_NO_SUCH_TABLE') {
+      return [];
+    }
+    throw err;
+  }
+}
+
+export async function getBannerById(id: string): Promise<Banner | undefined> {
+  const [rows] = await pool.execute<BannerRow[]>('SELECT * FROM banners WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToBanner(rows[0]);
+}
+
+export async function createBanner(data: Partial<Banner>): Promise<Banner> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    `INSERT INTO banners (title, subtitle, image, cta_label, cta_url, badge, sort_order, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      data.title ?? '',
+      data.subtitle ?? '',
+      data.image ?? '',
+      data.ctaLabel ?? '',
+      data.ctaUrl ?? '',
+      data.badge ?? '',
+      data.sortOrder ?? 0,
+      data.active === false ? 0 : 1,
+    ],
+  );
+  return (await getBannerById(String(result.insertId)))!;
+}
+
+export async function updateBanner(id: string, data: Partial<Banner>): Promise<Banner | null> {
+  const [existing] = await pool.execute<BannerRow[]>('SELECT id FROM banners WHERE id = ?', [id]);
+  if (existing.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
+  if (data.subtitle !== undefined) { fields.push('subtitle = ?'); values.push(data.subtitle); }
+  if (data.image !== undefined) { fields.push('image = ?'); values.push(data.image); }
+  if (data.ctaLabel !== undefined) { fields.push('cta_label = ?'); values.push(data.ctaLabel); }
+  if (data.ctaUrl !== undefined) { fields.push('cta_url = ?'); values.push(data.ctaUrl); }
+  if (data.badge !== undefined) { fields.push('badge = ?'); values.push(data.badge); }
+  if (data.sortOrder !== undefined) { fields.push('sort_order = ?'); values.push(data.sortOrder); }
+  if (data.active !== undefined) { fields.push('active = ?'); values.push(data.active ? 1 : 0); }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.execute(`UPDATE banners SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return (await getBannerById(id)) ?? null;
+}
+
+export async function deleteBanner(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM banners WHERE id = ?', [id]);
   return result.affectedRows > 0;
 }
 

@@ -114,6 +114,14 @@ export default function LaunchPage() {
         <p className="text-muted/50 text-xs">
           Pittsburgh &middot; Lagos &middot; London &middot; Accra &middot; Toronto
         </p>
+
+        {/* Skip to home */}
+        <a
+          href="/home"
+          className="inline-block text-muted/60 hover:text-accent text-[11px] uppercase tracking-[0.2em] transition-colors"
+        >
+          Skip &rarr;
+        </a>
       </div>
     </div>
   );
