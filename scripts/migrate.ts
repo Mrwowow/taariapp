@@ -3,6 +3,7 @@
  * Run with: npx tsx scripts/migrate.ts
  */
 import 'dotenv/config';
+import type { RowDataPacket } from 'mysql2';
 import pool from '../lib/db';
 
 async function migrate() {
@@ -64,6 +65,7 @@ async function migrate() {
         city_id INT NOT NULL,
         categories JSON NOT NULL,
         is_sponsored BOOLEAN DEFAULT FALSE,
+        is_featured BOOLEAN DEFAULT FALSE,
         published_at DATE NOT NULL,
         read_time INT DEFAULT 5,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -73,6 +75,15 @@ async function migrate() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✓ articles');
+
+    // Ensure is_featured column exists on older installs
+    const [featuredCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'is_featured'"
+    );
+    if ((featuredCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE articles ADD COLUMN is_featured BOOLEAN DEFAULT FALSE AFTER is_sponsored');
+      console.log('✓ articles.is_featured (added)');
+    }
 
     // ── Article gallery images ──────────────────────────────────────
     await conn.execute(`
@@ -179,6 +190,24 @@ async function migrate() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✓ newsletter_subscribers');
+
+    // ── Banners (home hero slider) ──────────────────────────────────
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS banners (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(300) NOT NULL,
+        subtitle TEXT,
+        image TEXT NOT NULL,
+        cta_label VARCHAR(100),
+        cta_url VARCHAR(500),
+        badge VARCHAR(100),
+        sort_order INT DEFAULT 0,
+        active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ banners');
 
     console.log('\n✅ All tables created successfully!');
   } finally {

@@ -37,8 +37,8 @@ export default function ImageUpload({
       const res = await fetch('/api/upload', { method: 'POST', body: formData });
       const data = await res.json();
 
-      if (!res.ok) {
-        alert(data.error || 'Upload failed');
+      if (!res.ok || !data.url) {
+        alert(data.error || 'Upload failed — no URL returned');
         return;
       }
 
@@ -66,7 +66,7 @@ export default function ImageUpload({
     <div>
       <label className="block text-sm font-medium text-[#1A1A1A] mb-1.5">{label}</label>
 
-      {value ? (
+      {value && value.trim() ? (
         <div className="relative group">
           <div className={`relative ${aspect} overflow-hidden rounded-lg border border-gray-200`}>
             <Image
@@ -75,6 +75,7 @@ export default function ImageUpload({
               fill
               className="object-cover"
               sizes="400px"
+              unoptimized
             />
           </div>
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-3">

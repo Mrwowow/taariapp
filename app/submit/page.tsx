@@ -201,7 +201,6 @@ export default function SubmitPage() {
             </label>
             <textarea
               required
-              maxLength={500}
               rows={6}
               value={form.summary}
               onChange={(e) => {
@@ -211,7 +210,7 @@ export default function SubmitPage() {
               className="w-full px-4 py-3 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors resize-none"
               placeholder="Tell us your story in a few words..."
             />
-            <p className="text-xs text-muted mt-1">{charCount} / 500 characters</p>
+            <p className="text-xs text-muted mt-1">{charCount} characters</p>
           </div>
 
           {/* Image Upload */}
