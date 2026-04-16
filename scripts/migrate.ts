@@ -206,6 +206,7 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS change_makers (
         id INT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(200) NOT NULL,
+        slug VARCHAR(250) NOT NULL UNIQUE,
         title VARCHAR(300) NOT NULL,
         bio TEXT,
         photo TEXT,
@@ -228,6 +229,56 @@ async function migrate() {
     if ((videoUrlCol as unknown[]).length === 0) {
       await conn.execute('ALTER TABLE change_makers ADD COLUMN video_url TEXT AFTER featured');
       console.log('✓ change_makers.video_url (added)');
+    }
+
+    // Ensure slug column exists + is backfilled + unique
+    const [slugCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_makers' AND COLUMN_NAME = 'slug'"
+    );
+    if ((slugCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE change_makers ADD COLUMN slug VARCHAR(250) NULL AFTER name');
+      console.log('✓ change_makers.slug (added)');
+    }
+
+    // Backfill NULL slugs from name; disambiguate duplicates by appending -<id>
+    const [needsBackfill] = await conn.execute<RowDataPacket[]>(
+      "SELECT id, name FROM change_makers WHERE slug IS NULL OR slug = ''"
+    );
+    const toSlug = (s: string) => s.toLowerCase().trim()
+      .replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+    for (const row of needsBackfill as Array<{ id: number; name: string }>) {
+      const base = toSlug(row.name) || `change-maker-${row.id}`;
+      let slug = base;
+      let n = 2;
+      // Ensure uniqueness
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const [dup] = await conn.execute<RowDataPacket[]>(
+          'SELECT id FROM change_makers WHERE slug = ? AND id != ?', [slug, row.id]
+        );
+        if ((dup as unknown[]).length === 0) break;
+        slug = `${base}-${n++}`;
+      }
+      await conn.execute('UPDATE change_makers SET slug = ? WHERE id = ?', [slug, row.id]);
+    }
+    if ((needsBackfill as unknown[]).length > 0) {
+      console.log(`✓ change_makers.slug backfilled (${(needsBackfill as unknown[]).length} rows)`);
+    }
+
+    // Enforce NOT NULL + UNIQUE once data is clean
+    const [slugNullable] = await conn.execute<RowDataPacket[]>(
+      "SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_makers' AND COLUMN_NAME = 'slug'"
+    );
+    if ((slugNullable as Array<{ IS_NULLABLE: string }>)[0]?.IS_NULLABLE === 'YES') {
+      await conn.execute('ALTER TABLE change_makers MODIFY slug VARCHAR(250) NOT NULL');
+      console.log('✓ change_makers.slug NOT NULL');
+    }
+    const [slugIdx] = await conn.execute<RowDataPacket[]>(
+      "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_makers' AND COLUMN_NAME = 'slug' AND NON_UNIQUE = 0"
+    );
+    if ((slugIdx as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE change_makers ADD UNIQUE KEY uniq_change_makers_slug (slug)');
+      console.log('✓ change_makers.slug UNIQUE');
     }
 
     // ── Banners (home hero slider) ──────────────────────────────────

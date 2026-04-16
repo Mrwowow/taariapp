@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Badge from "@/components/ui/Badge";
-import { getChangeMakerById, getChangeMakers } from "@/lib/store";
+import { getChangeMakerBySlug, getChangeMakers } from "@/lib/store";
 
 export const dynamic = "force-dynamic";
 
@@ -38,10 +38,10 @@ function youtubeEmbedUrl(raw: string): string | null {
 export default async function ChangeMakerDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const maker = await getChangeMakerById(id);
+  const { slug } = await params;
+  const maker = await getChangeMakerBySlug(slug);
   if (!maker) notFound();
 
   const all = await getChangeMakers();
@@ -168,7 +168,7 @@ export default async function ChangeMakerDetailPage({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {related.map((m) => (
-                <Link key={m.id} href={`/change-makers/${m.id}`} className="group block">
+                <Link key={m.id} href={`/change-makers/${m.slug}`} className="group block">
                   <div className="relative aspect-square overflow-hidden rounded-2xl mb-4 bg-gray-100">
                     {m.photo ? (
                       <Image
