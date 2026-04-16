@@ -17,19 +17,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               Documenting the African Diaspora across global cities.
             </p>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center border border-white/20 rounded-lg overflow-hidden">
-                <div className="flex items-center gap-1.5 px-3 py-2 border-r border-white/20">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
-                    <rect x="3" y="5" width="18" height="14" rx="2" /><polyline points="3,5 12,13 21,5" />
-                  </svg>
-                </div>
-                <input type="email" placeholder="Your email" className="bg-transparent text-sm text-white placeholder:text-gray-500 px-3 py-2 w-[120px] outline-none" />
-              </div>
-              <button className="bg-btn-bg text-white text-xs font-medium px-4 py-2.5 rounded-lg hover:bg-btn-bg-hover transition-colors">
-                Subscribe
-              </button>
-            </div>
+            <NewsletterForm variant="footer" />
           </div>
 
           {/* Explore */}

@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import AdminTable from '@/components/admin/AdminTable';
 import StatusBadge from '@/components/admin/StatusBadge';
+import RejectSubmissionModal from '@/components/admin/RejectSubmissionModal';
 import type { Submission } from '@/lib/store';
 
 export default function SubmissionsPage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejectTarget, setRejectTarget] = useState<Submission | null>(null);
 
   async function load() {
     const res = await fetch('/api/admin/submissions');
@@ -24,6 +26,18 @@ export default function SubmissionsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
     });
+    load();
+  }
+
+  async function confirmReject(reason: string) {
+    if (!rejectTarget) return;
+    const res = await fetch(`/api/admin/submissions/${rejectTarget.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'rejected', rejectionReason: reason }),
+    });
+    if (!res.ok) throw new Error('reject failed');
+    setRejectTarget(null);
     load();
   }
 
@@ -81,7 +95,7 @@ export default function SubmissionsPage() {
           )}
           {s.status !== 'rejected' && (
             <button
-              onClick={() => updateStatus(s.id, 'rejected')}
+              onClick={() => setRejectTarget(s)}
               className="text-xs px-2 py-1 bg-red-50 text-red-600 border border-red-200 rounded hover:bg-red-100 transition-colors"
             >
               Reject
@@ -126,6 +140,13 @@ export default function SubmissionsPage() {
       ) : (
         <AdminTable columns={columns} data={submissions} emptyMessage="No submissions yet." />
       )}
+
+      <RejectSubmissionModal
+        open={rejectTarget !== null}
+        submitterName={rejectTarget?.name ?? ''}
+        onClose={() => setRejectTarget(null)}
+        onConfirm={confirmReject}
+      />
     </div>
   );
 }

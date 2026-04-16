@@ -159,11 +159,21 @@ async function migrate() {
         social_handles VARCHAR(500),
         image_urls JSON,
         status ENUM('pending','approved','rejected') DEFAULT 'pending',
+        rejection_reason TEXT,
         submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✓ submissions');
+
+    // Ensure rejection_reason column exists on older installs
+    const [rejectionCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'submissions' AND COLUMN_NAME = 'rejection_reason'"
+    );
+    if ((rejectionCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE submissions ADD COLUMN rejection_reason TEXT AFTER status');
+      console.log('✓ submissions.rejection_reason (added)');
+    }
 
     // ── Users ───────────────────────────────────────────────────────
     await conn.execute(`

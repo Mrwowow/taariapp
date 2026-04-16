@@ -2,21 +2,23 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import LocationSelect from "@/components/ui/LocationSelect";
+import RichTextEditor from "@/components/ui/RichTextEditor";
 
-const CITIES = ["Atlanta", "Houston", "Toronto", "London", "New York", "Other"];
 const MAX_IMAGES = 5;
 
 export default function SubmitPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [charCount, setCharCount] = useState(0);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     name: '',
     email: '',
+    country: '',
+    state: '',
     city: '',
     summary: '',
     videoLink: '',
@@ -73,6 +75,14 @@ export default function SubmitPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Rich editor stores HTML; validate that there's real text content.
+    const plainText = form.summary.replace(/<[^>]*>/g, '').trim();
+    if (!plainText) {
+      setError('Please write your story before submitting.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
 
@@ -123,7 +133,7 @@ export default function SubmitPage() {
   }
 
   return (
-    <div className="py-16 px-6">
+    <div className="py-16 px-6 bg-[#F5F3EF] min-h-screen">
       <div className="mx-auto max-w-[640px]">
         {/* Header */}
         <h1 className="font-serif text-4xl md:text-5xl font-bold text-dark mb-3">
@@ -132,16 +142,15 @@ export default function SubmitPage() {
         <p className="text-lg text-muted mb-10">
           Have a story from the Diaspora? We want to hear it.
         </p>
-        <div className="w-full h-[1px] bg-border mb-10" />
 
         {/* Form */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm mb-6 rounded-lg">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-border/40">
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-dark mb-2">
@@ -152,7 +161,7 @@ export default function SubmitPage() {
               required
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
+              className="w-full h-12 px-5 border border-[#D4D4D0] rounded-[30px] bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="Your full name"
             />
           </div>
@@ -167,50 +176,35 @@ export default function SubmitPage() {
               required
               value={form.email}
               onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
+              className="w-full h-12 px-5 border border-[#D4D4D0] rounded-[30px] bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="you@example.com"
             />
           </div>
 
-          {/* City */}
-          <div>
-            <label className="block text-sm font-medium text-dark mb-2">
-              City <span className="text-accent">*</span>
-            </label>
-            <select
-              required
-              value={form.city}
-              onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-              className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors appearance-none"
-            >
-              <option value="" disabled>
-                Select a city
-              </option>
-              {CITIES.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Location */}
+          <LocationSelect
+            variant="light"
+            required
+            country={form.country}
+            state={form.state}
+            city={form.city}
+            onChange={(v) => setForm((f) => ({ ...f, ...v }))}
+          />
 
           {/* Story */}
           <div>
             <label className="block text-sm font-medium text-dark mb-2">
               Your Story <span className="text-accent">*</span>
             </label>
-            <textarea
-              required
-              rows={6}
+            <RichTextEditor
               value={form.summary}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, summary: e.target.value }));
-                setCharCount(e.target.value.length);
-              }}
-              className="w-full px-4 py-3 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors resize-none"
-              placeholder="Tell us your story in a few words..."
+              onChange={(html) => setForm((f) => ({ ...f, summary: html }))}
+              placeholder="Tell us your story in full — use the toolbar to add headings, quotes, lists, and links."
+              minHeight="280px"
             />
-            <p className="text-xs text-muted mt-1">{charCount} characters</p>
+            <p className="text-xs text-muted mt-2">
+              Format your story with headings, bold, italics, quotes, and lists. No word limit.
+            </p>
           </div>
 
           {/* Image Upload */}
@@ -242,7 +236,7 @@ export default function SubmitPage() {
               onClick={() => !uploading && fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
-              className={`border-2 border-dashed border-border p-8 text-center hover:border-muted transition-colors ${
+              className={`border-2 border-dashed border-[#D4D4D0] rounded-[30px] p-8 text-center hover:border-muted transition-colors ${
                 uploading || imageUrls.length >= MAX_IMAGES ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
               }`}
             >
@@ -289,7 +283,7 @@ export default function SubmitPage() {
               type="url"
               value={form.videoLink}
               onChange={(e) => setForm((f) => ({ ...f, videoLink: e.target.value }))}
-              className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
+              className="w-full h-12 px-5 border border-[#D4D4D0] rounded-[30px] bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="https://"
             />
             <p className="text-xs text-muted mt-1">YouTube, Vimeo, or Instagram URL</p>
@@ -304,7 +298,7 @@ export default function SubmitPage() {
               type="text"
               value={form.socialHandles}
               onChange={(e) => setForm((f) => ({ ...f, socialHandles: e.target.value }))}
-              className="w-full h-12 px-4 border border-border bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
+              className="w-full h-12 px-5 border border-[#D4D4D0] rounded-[30px] bg-transparent text-dark text-sm focus:outline-none focus:border-dark transition-colors"
               placeholder="@yourhandle"
             />
           </div>
@@ -313,7 +307,7 @@ export default function SubmitPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-14 bg-dark text-cream text-xs font-medium uppercase tracking-[0.1em] hover:bg-accent transition-colors disabled:opacity-50"
+            className="w-full h-14 rounded-[30px] bg-dark text-cream text-xs font-medium uppercase tracking-[0.1em] hover:bg-accent transition-colors disabled:opacity-50"
           >
             {submitting ? 'Submitting…' : 'Submit Story'}
           </button>

@@ -3,12 +3,19 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-const cityOptions = ['Atlanta', 'Houston', 'Toronto', 'London', 'New York'];
+import LocationSelect from '@/components/ui/LocationSelect';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', city: '' });
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    country: '',
+    state: '',
+    city: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +46,8 @@ export default function RegisterPage() {
           name: form.name,
           email: form.email,
           password: form.password,
+          country: form.country,
+          state: form.state,
           city: form.city,
         }),
       });
@@ -108,22 +117,15 @@ export default function RegisterPage() {
               />
             </div>
 
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-cream/80 mb-1.5">
-                City
-              </label>
-              <select
-                id="city"
-                value={form.city}
-                onChange={(e) => update('city', e.target.value)}
-                className="w-full bg-dark border border-white/10 rounded-lg px-4 py-3 text-sm text-cream outline-none focus:border-accent transition-colors appearance-none"
-              >
-                <option value="" className="bg-dark text-muted">Select your city</option>
-                {cityOptions.map((c) => (
-                  <option key={c} value={c} className="bg-dark text-cream">{c}</option>
-                ))}
-              </select>
-            </div>
+            <LocationSelect
+              variant="dark"
+              country={form.country}
+              state={form.state}
+              city={form.city}
+              onChange={(v) => setForm((prev) => ({ ...prev, ...v }))}
+            />
+
+
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-cream/80 mb-1.5">

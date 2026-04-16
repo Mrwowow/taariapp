@@ -85,12 +85,15 @@ export interface Submission {
   id: string;
   name: string;
   email: string;
+  country: string;
+  state: string;
   city: string;
   summary: string;
   videoLink: string;
   socialHandles: string;
   imageUrls: string[];
   status: 'pending' | 'approved' | 'rejected';
+  rejectionReason: string;
   submittedAt: string;
 }
 
@@ -169,9 +172,9 @@ interface SponsorRow extends RowDataPacket {
 }
 
 interface SubmissionRow extends RowDataPacket {
-  id: number; name: string; email: string; city: string; summary: string;
+  id: number; name: string; email: string; country: string; state: string; city: string; summary: string;
   video_link: string; social_handles: string; image_urls: string;
-  status: string; submitted_at: string;
+  status: string; rejection_reason: string | null; submitted_at: string;
 }
 
 interface UserRow extends RowDataPacket {
@@ -560,10 +563,12 @@ export async function deleteSponsor(id: string): Promise<boolean> {
 function rowToSubmission(row: SubmissionRow): Submission {
   const imageUrls = typeof row.image_urls === 'string' ? JSON.parse(row.image_urls) : (row.image_urls ?? []);
   return {
-    id: String(row.id), name: row.name, email: row.email, city: row.city,
+    id: String(row.id), name: row.name, email: row.email,
+    country: row.country ?? '', state: row.state ?? '', city: row.city,
     summary: row.summary, videoLink: row.video_link ?? '',
     socialHandles: row.social_handles ?? '', imageUrls,
     status: row.status as Submission['status'],
+    rejectionReason: row.rejection_reason ?? '',
     submittedAt: row.submitted_at,
   };
 }
@@ -580,13 +585,13 @@ export async function getSubmissionById(id: string): Promise<Submission | undefi
 }
 
 export async function createSubmission(data: {
-  name: string; email: string; city: string; summary: string;
+  name: string; email: string; country?: string; state?: string; city: string; summary: string;
   videoLink?: string; socialHandles?: string; imageUrls?: string[];
 }): Promise<Submission> {
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO submissions (name, email, city, summary, video_link, social_handles, image_urls)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [data.name, data.email, data.city, data.summary,
+    `INSERT INTO submissions (name, email, country, state, city, summary, video_link, social_handles, image_urls)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [data.name, data.email, data.country ?? '', data.state ?? '', data.city, data.summary,
      data.videoLink ?? '', data.socialHandles ?? '', JSON.stringify(data.imageUrls ?? [])]
   );
   return (await getSubmissionById(String(result.insertId)))!;
@@ -599,9 +604,15 @@ export async function getSubmissionsByEmail(email: string): Promise<Submission[]
   return rows.map(rowToSubmission);
 }
 
-export async function updateSubmissionStatus(id: string, status: Submission['status']): Promise<Submission | null> {
+export async function updateSubmissionStatus(
+  id: string,
+  status: Submission['status'],
+  rejectionReason?: string,
+): Promise<Submission | null> {
+  const reasonToPersist = status === 'rejected' ? (rejectionReason ?? '') : null;
   const [result] = await pool.execute<ResultSetHeader>(
-    'UPDATE submissions SET status = ? WHERE id = ?', [status, id]
+    'UPDATE submissions SET status = ?, rejection_reason = ? WHERE id = ?',
+    [status, reasonToPersist, id]
   );
   if (result.affectedRows === 0) return null;
   return (await getSubmissionById(id)) ?? null;
