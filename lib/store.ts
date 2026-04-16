@@ -130,6 +130,7 @@ export interface ChangeMaker {
   city: string;
   year: number;
   featured: boolean;
+  videoUrl: string;
   publishedAt: string;
 }
 
@@ -184,7 +185,8 @@ interface UserRow extends RowDataPacket {
 
 interface ChangeMakerRow extends RowDataPacket {
   id: number; name: string; title: string; bio: string; photo: string;
-  category: string; city: string; year: number; featured: number; published_at: string;
+  category: string; city: string; year: number; featured: number;
+  video_url: string | null; published_at: string;
 }
 
 function rowToCity(row: CityRow): City & { id: string } {
@@ -680,7 +682,9 @@ function rowToChangeMaker(row: ChangeMakerRow): ChangeMaker {
   return {
     id: String(row.id), name: row.name, title: row.title, bio: row.bio,
     photo: row.photo, category: row.category, city: row.city,
-    year: row.year, featured: !!row.featured, publishedAt: row.published_at,
+    year: row.year, featured: !!row.featured,
+    videoUrl: row.video_url ?? '',
+    publishedAt: row.published_at,
   };
 }
 
@@ -697,10 +701,11 @@ export async function getChangeMakerById(id: string): Promise<ChangeMaker | unde
 
 export async function createChangeMaker(data: Omit<ChangeMaker, 'id'>): Promise<ChangeMaker> {
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO change_makers (name, title, bio, photo, category, city, year, featured, published_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO change_makers (name, title, bio, photo, category, city, year, featured, video_url, published_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.name, data.title, data.bio, data.photo, data.category, data.city,
-     data.year, data.featured ? 1 : 0, toMysqlDate(data.publishedAt)]
+     data.year, data.featured ? 1 : 0, data.videoUrl?.trim() || null,
+     toMysqlDate(data.publishedAt)]
   );
   return (await getChangeMakerById(String(result.insertId)))!;
 }
@@ -720,6 +725,7 @@ export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>):
   if (data.city !== undefined) { fields.push('city = ?'); values.push(data.city); }
   if (data.year !== undefined) { fields.push('year = ?'); values.push(data.year); }
   if (data.featured !== undefined) { fields.push('featured = ?'); values.push(data.featured ? 1 : 0); }
+  if (data.videoUrl !== undefined) { fields.push('video_url = ?'); values.push(data.videoUrl.trim() || null); }
   if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
 
   if (fields.length > 0) {
