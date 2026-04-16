@@ -37,6 +37,7 @@ export default function EditChangeMakerPage() {
     city: '',
     year: new Date().getFullYear(),
     featured: false,
+    videoUrl: '',
     publishedAt: '',
   });
 
@@ -53,6 +54,7 @@ export default function EditChangeMakerPage() {
           city: m.city ?? '',
           year: m.year ?? new Date().getFullYear(),
           featured: !!m.featured,
+          videoUrl: m.videoUrl ?? '',
           publishedAt: m.publishedAt ? m.publishedAt.slice(0, 10) : '',
         });
         setLoading(false);
@@ -180,6 +182,17 @@ export default function EditChangeMakerPage() {
             className={inputClass}
             value={form.publishedAt}
             onChange={(e) => setForm((f) => ({ ...f, publishedAt: e.target.value }))}
+          />
+        </FormField>
+
+        <FormField label="YouTube Interview Video (optional)" htmlFor="videoUrl">
+          <input
+            id="videoUrl"
+            type="url"
+            className={inputClass}
+            value={form.videoUrl}
+            onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
+            placeholder="https://www.youtube.com/watch?v=…"
           />
         </FormField>
 

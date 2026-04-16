@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Image from "next/image";
+import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import { getChangeMakers } from "@/lib/store";
 
@@ -41,9 +42,10 @@ export default async function ChangeMakersPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {featured.map((maker) => (
-                <div
+                <Link
                   key={maker.id}
-                  className="group bg-[#FAFAFA] rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow"
+                  href={`/change-makers/${maker.id}`}
+                  className="group bg-[#FAFAFA] rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow block"
                 >
                   <div className="flex flex-col sm:flex-row">
                     <div className="relative w-full sm:w-48 aspect-square sm:aspect-auto shrink-0">
@@ -62,7 +64,7 @@ export default async function ChangeMakersPage() {
                       )}
                     </div>
                     <div className="p-6 flex flex-col justify-center">
-                      <h3 className="font-serif text-xl font-bold text-dark">
+                      <h3 className="font-serif text-xl font-bold text-dark group-hover:text-accent transition-colors">
                         {maker.name}
                       </h3>
                       <p className="text-sm text-accent font-medium mt-1">
@@ -79,7 +81,7 @@ export default async function ChangeMakersPage() {
                       )}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -93,7 +95,7 @@ export default async function ChangeMakersPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {byYear[year].map((maker) => (
-                <div key={maker.id} className="group">
+                <Link key={maker.id} href={`/change-makers/${maker.id}`} className="group block">
                   <div className="relative aspect-square overflow-hidden rounded-2xl mb-4">
                     {maker.photo ? (
                       <Image
@@ -124,7 +126,7 @@ export default async function ChangeMakersPage() {
                       {maker.bio}
                     </p>
                   )}
-                </div>
+                </Link>
               ))}
             </div>
           </div>

@@ -7,7 +7,7 @@ export default function Badge({ children, variant = "city" }: BadgeProps) {
   const styles = {
     city: "bg-accent/20 text-accent",
     sponsored: "bg-accent/20 text-accent",
-    category: "bg-white/10 text-cream/70",
+    category: "bg-dark/5 text-dark/70 border border-dark/10",
   };
 
   return (

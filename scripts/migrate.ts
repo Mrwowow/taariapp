@@ -201,6 +201,35 @@ async function migrate() {
     `);
     console.log('✓ newsletter_subscribers');
 
+    // ── Change Makers ───────────────────────────────────────────────
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS change_makers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        title VARCHAR(300) NOT NULL,
+        bio TEXT,
+        photo TEXT,
+        category VARCHAR(100),
+        city VARCHAR(100),
+        year INT NOT NULL,
+        featured TINYINT(1) DEFAULT 0,
+        video_url TEXT,
+        published_at DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ change_makers');
+
+    // Ensure video_url column exists on older installs
+    const [videoUrlCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'change_makers' AND COLUMN_NAME = 'video_url'"
+    );
+    if ((videoUrlCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE change_makers ADD COLUMN video_url TEXT AFTER featured');
+      console.log('✓ change_makers.video_url (added)');
+    }
+
     // ── Banners (home hero slider) ──────────────────────────────────
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS banners (
