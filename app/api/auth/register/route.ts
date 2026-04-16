@@ -5,7 +5,7 @@ import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export async function POST(request: Request) {
   const data = await request.json();
-  const { name, email, password, city } = data;
+  const { name, email, password, country, state, city } = data;
 
   if (!name || !email || !password) {
     return NextResponse.json({ error: 'Name, email and password are required' }, { status: 400 });
@@ -28,12 +28,14 @@ export async function POST(request: Request) {
 
   // Create user
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO users (name, email, password_hash, role, status, city, avatar)
-     VALUES (?, ?, ?, 'reader', 'active', ?, ?)`,
+    `INSERT INTO users (name, email, password_hash, role, status, country, state, city, avatar)
+     VALUES (?, ?, ?, 'reader', 'active', ?, ?, ?, ?)`,
     [
       name,
       email,
       passwordHash,
+      country || '',
+      state || '',
       city || '',
       `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=128&background=C9A84C&color=0D0D0B`,
     ]

@@ -126,7 +126,7 @@ export default function ProfilePage() {
                   </div>
 
                   <p className="text-sm text-muted leading-relaxed line-clamp-3 mb-3">
-                    {sub.summary}
+                    {sub.summary.replace(/<[^>]*>/g, '').trim()}
                   </p>
 
                   {/* Meta row */}
