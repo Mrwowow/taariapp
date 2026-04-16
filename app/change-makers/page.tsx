@@ -44,7 +44,7 @@ export default async function ChangeMakersPage() {
               {featured.map((maker) => (
                 <Link
                   key={maker.id}
-                  href={`/change-makers/${maker.id}`}
+                  href={`/change-makers/${maker.slug}`}
                   className="group bg-[#FAFAFA] rounded-2xl overflow-hidden border border-gray-100 hover:shadow-lg transition-shadow block"
                 >
                   <div className="flex flex-col sm:flex-row">
@@ -95,7 +95,7 @@ export default async function ChangeMakersPage() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {byYear[year].map((maker) => (
-                <Link key={maker.id} href={`/change-makers/${maker.id}`} className="group block">
+                <Link key={maker.id} href={`/change-makers/${maker.slug}`} className="group block">
                   <div className="relative aspect-square overflow-hidden rounded-2xl mb-4">
                     {maker.photo ? (
                       <Image

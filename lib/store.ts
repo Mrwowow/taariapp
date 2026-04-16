@@ -123,6 +123,7 @@ export interface Banner {
 export interface ChangeMaker {
   id: string;
   name: string;
+  slug: string;
   title: string;
   bio: string;
   photo: string;
@@ -184,7 +185,7 @@ interface UserRow extends RowDataPacket {
 }
 
 interface ChangeMakerRow extends RowDataPacket {
-  id: number; name: string; title: string; bio: string; photo: string;
+  id: number; name: string; slug: string; title: string; bio: string; photo: string;
   category: string; city: string; year: number; featured: number;
   video_url: string | null; published_at: string;
 }
@@ -680,12 +681,36 @@ export async function deleteUser(id: string): Promise<boolean> {
 
 function rowToChangeMaker(row: ChangeMakerRow): ChangeMaker {
   return {
-    id: String(row.id), name: row.name, title: row.title, bio: row.bio,
+    id: String(row.id), name: row.name, slug: row.slug,
+    title: row.title, bio: row.bio,
     photo: row.photo, category: row.category, city: row.city,
     year: row.year, featured: !!row.featured,
     videoUrl: row.video_url ?? '',
     publishedAt: row.published_at,
   };
+}
+
+function slugifyName(s: string): string {
+  return s.toLowerCase().trim()
+    .replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+async function generateUniqueChangeMakerSlug(name: string, excludeId?: string): Promise<string> {
+  const base = slugifyName(name) || 'change-maker';
+  let slug = base;
+  let n = 2;
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const [rows] = excludeId
+      ? await pool.execute<ChangeMakerRow[]>(
+          'SELECT id FROM change_makers WHERE slug = ? AND id != ?', [slug, excludeId]
+        )
+      : await pool.execute<ChangeMakerRow[]>(
+          'SELECT id FROM change_makers WHERE slug = ?', [slug]
+        );
+    if (rows.length === 0) return slug;
+    slug = `${base}-${n++}`;
+  }
 }
 
 export async function getChangeMakers(): Promise<ChangeMaker[]> {
@@ -699,11 +724,18 @@ export async function getChangeMakerById(id: string): Promise<ChangeMaker | unde
   return rowToChangeMaker(rows[0]);
 }
 
-export async function createChangeMaker(data: Omit<ChangeMaker, 'id'>): Promise<ChangeMaker> {
+export async function getChangeMakerBySlug(slug: string): Promise<ChangeMaker | undefined> {
+  const [rows] = await pool.execute<ChangeMakerRow[]>('SELECT * FROM change_makers WHERE slug = ?', [slug]);
+  if (rows.length === 0) return undefined;
+  return rowToChangeMaker(rows[0]);
+}
+
+export async function createChangeMaker(data: Omit<ChangeMaker, 'id' | 'slug'> & { slug?: string }): Promise<ChangeMaker> {
+  const slug = data.slug?.trim() || await generateUniqueChangeMakerSlug(data.name);
   const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO change_makers (name, title, bio, photo, category, city, year, featured, video_url, published_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [data.name, data.title, data.bio, data.photo, data.category, data.city,
+    `INSERT INTO change_makers (name, slug, title, bio, photo, category, city, year, featured, video_url, published_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [data.name, slug, data.title, data.bio, data.photo, data.category, data.city,
      data.year, data.featured ? 1 : 0, data.videoUrl?.trim() || null,
      toMysqlDate(data.publishedAt)]
   );
@@ -717,7 +749,15 @@ export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>):
   const fields: string[] = [];
   const values: (string | number | boolean | null)[] = [];
 
-  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.name !== undefined) {
+    fields.push('name = ?'); values.push(data.name);
+    // Re-slug when name changes and caller didn't supply an explicit slug
+    if (data.slug === undefined) {
+      const newSlug = await generateUniqueChangeMakerSlug(data.name, id);
+      fields.push('slug = ?'); values.push(newSlug);
+    }
+  }
+  if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
   if (data.photo !== undefined) { fields.push('photo = ?'); values.push(data.photo); }
