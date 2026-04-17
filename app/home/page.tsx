@@ -1,6 +1,13 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Hero from "@/components/home/Hero";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Stories, interviews, and reels documenting the African Diaspora across global cities.",
+  openGraph: { title: "TAARi — Documenting the African Diaspora" },
+};
 import FeaturedStory from "@/components/home/FeaturedStory";
 import LatestStories from "@/components/home/LatestStories";
 import CityEditionsPreview from "@/components/home/CityEditionsPreview";

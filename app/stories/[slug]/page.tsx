@@ -3,9 +3,26 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 import { getArticles, getArticleBySlug } from "@/lib/store";
+import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = await getArticleBySlug(slug);
+  if (!article) return {};
+  return buildMetadata({
+    title: article.title,
+    description: article.excerpt,
+    image: article.featuredImage,
+    path: `/stories/${slug}`,
+    type: "article",
+    publishedTime: article.publishedAt,
+    authorName: article.author.name,
+  });
+}
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

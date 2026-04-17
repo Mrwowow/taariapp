@@ -3,8 +3,23 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import { getChangeMakerBySlug, getChangeMakers } from "@/lib/store";
+import { buildMetadata } from "@/lib/metadata";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const maker = await getChangeMakerBySlug(slug);
+  if (!maker) return {};
+  return buildMetadata({
+    title: maker.name,
+    description: maker.title + (maker.bio ? ` — ${maker.bio}` : ""),
+    image: maker.photo,
+    path: `/change-makers/${slug}`,
+    type: "profile",
+  });
+}
 
 function youtubeEmbedUrl(raw: string): string | null {
   const trimmed = raw.trim();

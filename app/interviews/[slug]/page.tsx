@@ -2,9 +2,24 @@ import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import { getInterviewBySlug, getInterviews } from "@/lib/store";
+import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const interview = await getInterviewBySlug(slug);
+  if (!interview) return {};
+  return buildMetadata({
+    title: `A Conversation with ${interview.name}`,
+    description: interview.oneLiner || interview.bio,
+    image: interview.portrait,
+    path: `/interviews/${slug}`,
+    type: "profile",
+  });
+}
 
 export default async function InterviewDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
