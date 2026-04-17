@@ -1,7 +1,14 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Interviews",
+  description: "In-depth conversations with voices shaping the African Diaspora — activists, artists, entrepreneurs, and cultural leaders.",
+  openGraph: { title: "TAARi Interviews", description: "In-depth conversations with voices shaping the African Diaspora." },
+};
 import Badge from "@/components/ui/Badge";
 import { getInterviews } from "@/lib/store";
 

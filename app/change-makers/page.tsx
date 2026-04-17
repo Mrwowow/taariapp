@@ -1,7 +1,14 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Change Makers",
+  description: "TAARi Change Makers — honoring exceptional individuals across the Diaspora who have demonstrated sustained impact, leadership, and service.",
+  openGraph: { title: "TAARi Change Makers", description: "Honoring exceptional individuals across the Diaspora." },
+};
 import Badge from "@/components/ui/Badge";
 import { getChangeMakers } from "@/lib/store";
 

@@ -9,9 +9,23 @@ import {
   getReelsByCity,
   getSponsors,
 } from "@/lib/store";
+import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const city = await getCityBySlug(slug);
+  if (!city) return {};
+  return buildMetadata({
+    title: `${city.name} — City Edition`,
+    description: city.description,
+    image: city.heroImage,
+    path: `/city/${slug}`,
+  });
+}
 
 export default async function CityPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
