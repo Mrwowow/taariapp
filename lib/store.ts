@@ -92,7 +92,7 @@ export interface Submission {
   videoLink: string;
   socialHandles: string;
   imageUrls: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'converted';
   rejectionReason: string;
   submittedAt: string;
 }
@@ -316,7 +316,18 @@ export async function getArticlesByCity(citySlug: string): Promise<Article[]> {
 
 export async function createArticle(data: Article): Promise<Article> {
   const [authorRows] = await pool.execute<AuthorRow[]>('SELECT id FROM authors WHERE slug = ?', [data.author?.slug ?? '']);
-  const [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [data.city?.slug ?? '']);
+  let [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [data.city?.slug ?? '']);
+
+  // Auto-create city if it doesn't exist
+  if (cityRows.length === 0 && data.city?.name) {
+    const citySlug = data.city.slug || data.city.name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+    await pool.execute<ResultSetHeader>(
+      'INSERT INTO cities (name, slug, hero_image, description, story_count) VALUES (?, ?, ?, ?, ?)',
+      [data.city.name, citySlug, data.city.heroImage || '', data.city.description || '', 0]
+    );
+    [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [citySlug]);
+  }
+
   const authorId = authorRows[0]?.id ?? 1;
   const cityId = cityRows[0]?.id ?? 1;
 
@@ -577,7 +588,7 @@ function rowToSubmission(row: SubmissionRow): Submission {
 }
 
 export async function getSubmissions(): Promise<Submission[]> {
-  const [rows] = await pool.execute<SubmissionRow[]>('SELECT * FROM submissions ORDER BY submitted_at DESC');
+  const [rows] = await pool.execute<SubmissionRow[]>('SELECT * FROM submissions WHERE status != ? ORDER BY submitted_at DESC', ['converted']);
   return rows.map(rowToSubmission);
 }
 

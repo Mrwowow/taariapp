@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -23,10 +23,13 @@ const inputClass =
 
 export default function NewArticlePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromSubmission = searchParams.get('from_submission');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [cities, setCities] = useState<City[]>([]);
   const [loadingCities, setLoadingCities] = useState(true);
+  const [submittedCity, setSubmittedCity] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -40,20 +43,76 @@ export default function NewArticlePage() {
     authorName: '',
     readTime: '5',
     featuredImage: '',
+    gallery: [] as string[],
     publishedAt: new Date().toISOString().slice(0, 10),
   });
 
   useEffect(() => {
-    fetch('/api/admin/cities')
-      .then((r) => r.json())
-      .then((data: City[]) => {
-        setCities(data);
-        if (data.length > 0) {
-          setForm((f) => ({ ...f, citySlug: data[0].slug }));
+    async function init() {
+      // Load cities
+      const citiesRes = await fetch('/api/admin/cities');
+      const citiesData: City[] = await citiesRes.json();
+      setCities(citiesData);
+
+      // Pre-fill from approved submission
+      if (fromSubmission) {
+        const subRes = await fetch(`/api/admin/submissions/${fromSubmission}`);
+        if (subRes.ok) {
+          const sub = await subRes.json();
+          // Convert HTML summary to clean plain-text paragraphs
+          const plainText = sub.summary
+            ? sub.summary
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<\/?(p|div|h[1-6]|li|ul|ol|blockquote)[^>]*>/gi, '\n')
+                .replace(/<[^>]*>/g, '')
+                .replace(/&nbsp;/gi, ' ')
+                .replace(/&amp;/gi, '&')
+                .replace(/&lt;/gi, '<')
+                .replace(/&gt;/gi, '>')
+                .replace(/&quot;/gi, '"')
+                .replace(/&#39;/gi, "'")
+                .split('\n')
+                .map((line: string) => line.trim())
+                .filter((line: string) => line.length > 0)
+                .join('\n')
+            : '';
+
+          // Use the submitted city — match to existing DB city or keep as-is
+          const subCityName = (sub.city || '').trim();
+          const subCityLower = subCityName.toLowerCase();
+          const matchedCity = subCityLower
+            ? citiesData.find((c) => c.name.toLowerCase() === subCityLower)
+              || citiesData.find((c) => c.slug === slugify(subCityLower))
+              || citiesData.find((c) => subCityLower.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(subCityLower))
+            : undefined;
+
+          if (subCityName) setSubmittedCity(subCityName);
+
+          const images: string[] = sub.imageUrls || [];
+
+          setForm((f) => ({
+            ...f,
+            title: sub.name ? `${sub.name}'s Story` : f.title,
+            slug: slugify(sub.name ? `${sub.name}s-story` : ''),
+            excerpt: plainText.split('\n')[0]?.slice(0, 200) || '',
+            body: plainText,
+            authorName: sub.name || '',
+            featuredImage: images[0] || '',
+            gallery: images.slice(1),
+            citySlug: matchedCity?.slug || slugify(subCityName) || citiesData[0]?.slug || '',
+          }));
         }
-        setLoadingCities(false);
-      });
-  }, []);
+      }
+
+      // Default city if not set by submission
+      if (!fromSubmission && citiesData.length > 0) {
+        setForm((f) => ({ ...f, citySlug: f.citySlug || citiesData[0].slug }));
+      }
+
+      setLoadingCities(false);
+    }
+    init();
+  }, [fromSubmission]);
 
   function handleTitleChange(title: string) {
     setForm((f) => ({ ...f, title, slug: slugify(title) }));
@@ -74,13 +133,19 @@ export default function NewArticlePage() {
     setSaving(true);
     setError('');
 
-    const city = cities.find((c) => c.slug === form.citySlug) ?? cities[0];
+    const city = cities.find((c) => c.slug === form.citySlug) ?? {
+      name: submittedCity || form.citySlug,
+      slug: form.citySlug,
+      heroImage: '',
+      description: '',
+      storyCount: 0,
+    };
     const payload = {
       title: form.title,
       slug: form.slug,
       excerpt: form.excerpt,
       body: form.body.split('\n').filter(Boolean),
-      gallery: [],
+      gallery: form.gallery,
       city,
       categories: form.categories,
       isSponsored: form.isSponsored,
@@ -104,6 +169,14 @@ export default function NewArticlePage() {
     });
 
     if (res.ok) {
+      // Mark submission as converted so it's removed from the submissions list
+      if (fromSubmission) {
+        await fetch(`/api/admin/submissions/${fromSubmission}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'converted' }),
+        });
+      }
       router.push('/admin/articles');
     } else {
       setError('Failed to create article.');
@@ -129,6 +202,12 @@ export default function NewArticlePage() {
           New Article
         </h1>
       </div>
+
+      {fromSubmission && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm">
+          Pre-filled from submission. Review and edit the fields below before publishing.
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded text-sm">
@@ -187,6 +266,9 @@ export default function NewArticlePage() {
               value={form.citySlug}
               onChange={(e) => setForm((f) => ({ ...f, citySlug: e.target.value }))}
             >
+              {submittedCity && !cities.some((c) => c.name.toLowerCase() === submittedCity.toLowerCase()) && (
+                <option value={slugify(submittedCity)}>{submittedCity}</option>
+              )}
               {cities.map((c) => (
                 <option key={c.slug} value={c.slug}>{c.name}</option>
               ))}
@@ -228,6 +310,43 @@ export default function NewArticlePage() {
           label="Featured Image"
           aspect="aspect-video"
         />
+
+        {/* Gallery Images */}
+        {form.gallery.length > 0 && (
+          <FormField label={`Gallery Images (${form.gallery.length})`}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">
+              {form.gallery.map((url, i) => (
+                <div key={i} className="relative group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`Gallery image ${i + 1}`}
+                    className="w-full aspect-square object-cover rounded-lg border border-gray-200 cursor-pointer"
+                    onClick={() => window.open(url, '_blank')}
+                  />
+                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, featuredImage: url }))}
+                      title="Set as featured image"
+                      className="w-7 h-7 rounded-full bg-white/90 text-gray-700 text-xs flex items-center justify-center hover:bg-white shadow-sm"
+                    >
+                      ★
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, gallery: f.gallery.filter((_, idx) => idx !== i) }))}
+                      title="Remove from gallery"
+                      className="w-7 h-7 rounded-full bg-red-500/90 text-white text-xs flex items-center justify-center hover:bg-red-600 shadow-sm"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FormField>
+        )}
 
         <FormField label="Author Name" htmlFor="authorName">
           <input
