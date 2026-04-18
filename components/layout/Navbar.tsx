@@ -7,7 +7,7 @@ import MobileMenu from "./MobileMenu";
 
 const navLinks = [
   { label: "Cities", href: "/city/atlanta" },
-  { label: "Stories", href: "/stories/the-sound-of-the-new-south" },
+  { label: "Stories", href: "/stories" },
   { label: "Reels", href: "/reels" },
   { label: "Interviews", href: "/interviews" },
   { label: "Change Makers", href: "/change-makers" },

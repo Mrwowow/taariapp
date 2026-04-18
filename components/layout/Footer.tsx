@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 
 export default function Footer() {
@@ -12,7 +13,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <h3 className="font-serif text-2xl font-bold mb-2">TAARi</h3>
+            <Image src="/images/taarilogowhite.svg" alt="TAARi" width={96} height={32} className="h-8 w-auto mb-2" />
             <p className="text-[11px] text-gray-400 italic mb-4">The African Experience ...</p>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">
               Documenting the African Diaspora across global cities.

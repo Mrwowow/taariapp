@@ -109,6 +109,24 @@ export default function SubmissionDetailPage() {
         )}
       </div>
 
+      {/* Convert to Article */}
+      {submission.status === 'approved' && (
+        <div className="bg-green-50 rounded-xl p-6 shadow-sm border border-green-200">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-sm font-medium text-green-800">This submission is approved</p>
+              <p className="text-xs text-green-600 mt-1">Convert it to an article so it appears on the Stories page.</p>
+            </div>
+            <Link
+              href={`/admin/articles/new?from_submission=${id}`}
+              className="text-sm px-5 py-2 bg-[#1A1A1A] text-white rounded hover:bg-[#C8956C] transition-colors font-medium"
+            >
+              Convert to Article →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Details */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-5">
         <div className="grid grid-cols-2 gap-6">

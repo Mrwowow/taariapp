@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
+import ImageLightbox from "@/components/ui/ImageLightbox";
 import { getArticles, getArticleBySlug } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
@@ -100,22 +101,26 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           {/* Article Body */}
           <div className="space-y-6">
             {article.body.map((paragraph, i) => {
+              // Skip empty or whitespace-only paragraphs (including &nbsp;)
+              const cleaned = paragraph.replace(/&nbsp;/gi, ' ').trim();
+              if (!cleaned) return null;
+
               // Pull quote detection (starts with a quote mark)
-              if (paragraph.startsWith('"') || paragraph.startsWith('\u201C')) {
+              if (cleaned.startsWith('"') || cleaned.startsWith('\u201C')) {
                 return (
                   <blockquote
                     key={i}
                     className="border-l-[3px] border-accent pl-8 py-4 my-10"
                   >
                     <p className="font-serif text-2xl md:text-[28px] italic text-accent leading-relaxed">
-                      {paragraph}
+                      {cleaned}
                     </p>
                   </blockquote>
                 );
               }
               return (
                 <p key={i} className="text-lg leading-[1.8] text-dark">
-                  {paragraph}
+                  {cleaned}
                 </p>
               );
             })}
@@ -124,19 +129,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           {/* Photo Gallery */}
           {article.gallery.length > 0 && (
             <div className="my-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {article.gallery.map((img, i) => (
-                  <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                    <Image
-                      src={img}
-                      alt={`${article.title} gallery image ${i + 1}`}
-                      fill
-                      className="object-cover hover:scale-105 transition-transform duration-500 cursor-pointer"
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                    />
-                  </div>
-                ))}
-              </div>
+              <ImageLightbox images={article.gallery} alt={article.title} />
               <p className="text-sm text-muted italic mt-3 text-center">
                 Photo gallery — {article.title}
               </p>

@@ -20,7 +20,7 @@ export async function PATCH(
   const { id } = await params;
   const body = await req.json();
   const status = body.status as Submission['status'];
-  if (!['pending', 'approved', 'rejected'].includes(status)) {
+  if (!['pending', 'approved', 'rejected', 'converted'].includes(status)) {
     return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
   }
 

@@ -1,7 +1,7 @@
 'use client';
 
 interface StatusBadgeProps {
-  status: 'pending' | 'approved' | 'rejected' | 'sponsored';
+  status: 'pending' | 'approved' | 'rejected' | 'sponsored' | 'converted';
 }
 
 const styles: Record<StatusBadgeProps['status'], string> = {
@@ -9,6 +9,7 @@ const styles: Record<StatusBadgeProps['status'], string> = {
   approved: 'bg-green-50 text-green-700 border border-green-200',
   rejected: 'bg-red-50 text-red-600 border border-red-200',
   sponsored: 'bg-[#C8956C]/10 text-[#C8956C] border border-[#C8956C]/30',
+  converted: 'bg-blue-50 text-blue-700 border border-blue-200',
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

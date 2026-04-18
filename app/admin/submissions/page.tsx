@@ -109,6 +109,14 @@ export default function SubmissionsPage() {
               Pending
             </button>
           )}
+          {s.status === 'approved' && (
+            <Link
+              href={`/admin/articles/new?from_submission=${s.id}`}
+              className="text-xs px-2 py-1 bg-[#1A1A1A] text-white rounded hover:bg-[#C8956C] transition-colors whitespace-nowrap"
+            >
+              → Article
+            </Link>
+          )}
           <Link
             href={`/admin/submissions/${s.id}`}
             className="text-xs px-2 py-1 border border-gray-200 text-gray-600 rounded hover:bg-gray-50 transition-colors"

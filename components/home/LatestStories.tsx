@@ -12,7 +12,7 @@ export default async function LatestStories() {
   return (
     <section className="py-20 px-6 bg-dark">
       <div className="mx-auto max-w-[1280px]">
-        <SectionHeader title="Latest Stories" viewAllHref="/stories/the-sound-of-the-new-south" light />
+        <SectionHeader title="Latest Stories" viewAllHref="/stories" light />
 
         <div className="flex gap-3 h-[700px]">
 
