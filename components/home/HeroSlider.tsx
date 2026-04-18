@@ -33,7 +33,7 @@ export default function HeroSlider({ slides, intervalMs = 6000 }: Props) {
   if (slides.length === 0) return null;
 
   return (
-    <section className="relative w-full h-[85vh] min-h-[600px] overflow-hidden">
+    <section className="relative w-full h-[65vh] min-h-[420px] md:h-[85vh] md:min-h-[600px] overflow-hidden">
       {slides.map((slide, i) => (
         <div
           key={slide.id}
@@ -51,25 +51,25 @@ export default function HeroSlider({ slides, intervalMs = 6000 }: Props) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0D0D0B]/90 via-[#0D0D0B]/40 to-transparent" />
 
-          <div className="absolute bottom-0 left-0 right-0 p-8 md:p-16 max-w-[1280px] mx-auto">
+          <div className="absolute bottom-0 left-0 right-0 p-5 md:p-16 max-w-[1280px] mx-auto">
             {slide.badge && (
-              <span className="inline-block bg-accent text-dark text-[11px] font-bold uppercase tracking-[0.18em] px-3 py-1.5 mb-5">
+              <span className="inline-block bg-accent text-dark text-[11px] font-bold uppercase tracking-[0.18em] px-3 py-1.5 mb-3 md:mb-5">
                 {slide.badge}
               </span>
             )}
 
-            <h1 className="font-serif text-5xl md:text-7xl font-bold text-cream leading-tight mb-5 max-w-3xl">
+            <h1 className="font-serif text-3xl md:text-7xl font-bold text-cream leading-tight mb-3 md:mb-5 max-w-3xl">
               {slide.title}
             </h1>
             {slide.subtitle && (
-              <p className="text-cream/70 text-lg leading-relaxed mb-8 max-w-xl">
+              <p className="text-cream/70 text-base md:text-lg leading-relaxed mb-5 md:mb-8 max-w-xl line-clamp-2 md:line-clamp-none">
                 {slide.subtitle}
               </p>
             )}
             {slide.ctaUrl && slide.ctaLabel && (
               <Link
                 href={slide.ctaUrl}
-                className="inline-block text-[11px] font-bold uppercase tracking-[0.18em] bg-accent text-dark px-8 py-4 hover:bg-accent-dark transition-colors"
+                className="inline-block text-[11px] font-bold uppercase tracking-[0.18em] bg-accent text-dark px-6 py-3 md:px-8 md:py-4 hover:bg-accent-dark transition-colors"
               >
                 {slide.ctaLabel} &rarr;
               </Link>

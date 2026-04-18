@@ -10,9 +10,9 @@ export default function Footer() {
 
       {/* Main footer */}
       <div className="mx-auto max-w-[1320px] px-4 md:px-6 pt-12 pb-8">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-8 mb-10">
           {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-1 mb-4 md:mb-0">
             <Image src="/images/taarilogowhite.svg" alt="TAARi" width={96} height={32} className="h-8 w-auto mb-2" />
             <p className="text-[11px] text-gray-400 italic mb-4">The African Experience ...</p>
             <p className="text-sm text-gray-400 leading-relaxed mb-4">

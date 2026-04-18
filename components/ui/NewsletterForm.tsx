@@ -96,7 +96,7 @@ export default function NewsletterForm({ variant = "dark" }: NewsletterFormProps
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex gap-3">
+      <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="email"
           value={email}
@@ -104,7 +104,7 @@ export default function NewsletterForm({ variant = "dark" }: NewsletterFormProps
           placeholder="Enter your email"
           required
           disabled={status === "loading"}
-          className={inputClass}
+          className={`${inputClass} w-full sm:w-auto`}
         />
         <button
           type="submit"

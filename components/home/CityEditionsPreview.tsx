@@ -6,18 +6,18 @@ import { getCities } from "@/lib/store";
 export default async function CityEditionsPreview() {
   const cities = await getCities();
   return (
-    <section className="py-20 px-6 bg-dark-light">
+    <section className="py-12 md:py-20 px-4 md:px-6 bg-dark-light">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeader title="City Editions" light />
         <p className="text-muted text-lg mb-10 -mt-6">
           Explore the Diaspora, city by city.
         </p>
-        <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+        <div className="flex gap-4 md:gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide -mx-6 px-6">
           {cities.map((city) => (
             <Link
               key={city.slug}
               href={`/city/${city.slug}`}
-              className="group shrink-0 w-[260px] snap-start"
+              className="group shrink-0 w-[200px] md:w-[260px] snap-start"
             >
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-4">
                 {city.heroImage ? (
