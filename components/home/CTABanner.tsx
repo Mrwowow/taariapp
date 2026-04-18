@@ -1,12 +1,18 @@
 import Link from "next/link";
+import { getSponsors } from "@/lib/store";
 
-export default function CTABanner() {
+export default async function CTABanner() {
+  const sponsors = await getSponsors();
+  const sponsorNames = sponsors.map((s) => s.name);
+
   return (
     <section className="py-12 px-4 md:px-6 bg-cream">
       <div className="mx-auto max-w-[800px] text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 mb-3">
-          GreenGrowth TV &nbsp;&middot;&nbsp; Eye Watch &nbsp;&middot;&nbsp; Report
-        </p>
+        {sponsorNames.length > 0 && (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-400 mb-3">
+            {sponsorNames.join(' \u00B7 ')}
+          </p>
+        )}
         <h2 className="font-serif text-2xl md:text-3xl font-bold text-dark mb-3">
           Stay Informed. Get Involved. Make a Difference
         </h2>

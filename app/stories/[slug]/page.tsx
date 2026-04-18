@@ -3,7 +3,7 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 import ImageLightbox from "@/components/ui/ImageLightbox";
-import { getArticles, getArticleBySlug } from "@/lib/store";
+import { getArticles, getArticleBySlug, getSponsors } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -30,12 +30,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
-  const articles = await getArticles();
+  const [articles, sponsors] = await Promise.all([getArticles(), getSponsors()]);
   const relatedArticles = articles.filter((a) => a.slug !== slug).slice(0, 3);
+  const sponsor = sponsors[0];
 
   return (
     <>
-      {/* Featured Image */}
+      {/* Hero Featured Image */}
       <section className="relative w-full h-[70vh] min-h-[500px] overflow-hidden md:rounded-2xl">
         <Image
           src={article.featuredImage}
@@ -63,6 +64,18 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {article.title}
           </h1>
           <p className="text-xl text-muted leading-relaxed mb-6">{article.excerpt}</p>
+
+          {/* Featured Image */}
+          <div className="relative w-full aspect-[16/9] overflow-hidden rounded-2xl mb-8">
+            <Image
+              src={article.featuredImage}
+              alt={article.title}
+              fill
+              className="object-cover"
+              priority
+              sizes="(max-width: 720px) 100vw, 720px"
+            />
+          </div>
 
           {/* Author */}
           <div className="flex items-center gap-3 mb-8">
@@ -137,16 +150,36 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           )}
 
           {/* Sponsor Banner */}
-          {article.isSponsored && (
-            <div className="my-10 p-6 border border-border flex items-center gap-4">
-              <div className="w-12 h-12 bg-border/50 flex items-center justify-center text-[10px] text-muted font-medium shrink-0">
-                LOGO
-              </div>
+          {article.isSponsored && sponsor && (
+            <a
+              href={sponsor.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="my-10 p-6 border border-border rounded-xl flex items-center gap-4 hover:border-accent/30 hover:bg-accent/[0.02] transition-colors group block"
+            >
+              {sponsor.logo ? (
+                <Image
+                  src={sponsor.logo}
+                  alt={sponsor.name}
+                  width={48}
+                  height={48}
+                  className="rounded object-contain shrink-0"
+                />
+              ) : (
+                <div className="w-12 h-12 bg-border/50 rounded flex items-center justify-center text-sm text-muted font-medium shrink-0">
+                  {sponsor.name.charAt(0)}
+                </div>
+              )}
               <div>
                 <p className="text-xs text-muted uppercase tracking-wider">Presented by</p>
-                <p className="text-sm font-medium text-dark">Shea Moisture</p>
+                <p className="text-sm font-medium text-dark group-hover:text-accent transition-colors">
+                  {sponsor.name}
+                </p>
+                {sponsor.tagline && (
+                  <p className="text-xs text-muted mt-0.5">{sponsor.tagline}</p>
+                )}
               </div>
-            </div>
+            </a>
           )}
 
           {/* Author Bio */}

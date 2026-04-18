@@ -20,13 +20,19 @@ export default async function CityEditionsPreview() {
               className="group shrink-0 w-[260px] snap-start"
             >
               <div className="relative aspect-[4/5] overflow-hidden rounded-2xl mb-4">
-                <Image
-                  src={city.heroImage}
-                  alt={city.name}
-                  fill
-                  className="object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-75"
-                  sizes="260px"
-                />
+                {city.heroImage ? (
+                  <Image
+                    src={city.heroImage}
+                    alt={city.name}
+                    fill
+                    className="object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-75"
+                    sizes="260px"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-dark flex items-center justify-center">
+                    <span className="text-4xl font-bold text-white/20">{city.name.charAt(0)}</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-dark/70 to-transparent" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   <span className="text-accent text-xs font-bold uppercase tracking-[0.18em] border border-accent px-4 py-2">
