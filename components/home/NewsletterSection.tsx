@@ -2,7 +2,7 @@ import NewsletterForm from "@/components/ui/NewsletterForm";
 
 export default function NewsletterSection() {
   return (
-    <section className="py-20 px-6 bg-dark-card border-t border-border">
+    <section className="py-12 md:py-20 px-4 md:px-6 bg-dark-card border-t border-border">
       <div className="mx-auto max-w-xl text-center">
         <p className="text-accent text-[11px] font-bold uppercase tracking-[0.2em] mb-3">Stay Connected</p>
         <h2 className="font-serif text-3xl md:text-4xl font-bold text-cream mb-4">

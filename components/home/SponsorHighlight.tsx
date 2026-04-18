@@ -6,7 +6,7 @@ export default async function SponsorHighlight() {
   if (sponsors.length === 0) return null;
 
   return (
-    <section className="py-14 px-6 bg-dark border-t border-border">
+    <section className="py-10 md:py-14 px-4 md:px-6 bg-dark border-t border-border">
       <div className="mx-auto max-w-[1280px]">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted text-center mb-8">
           Our Partners

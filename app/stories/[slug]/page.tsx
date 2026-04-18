@@ -37,7 +37,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       {/* Hero Featured Image */}
-      <section className="relative w-full h-[70vh] min-h-[500px] overflow-hidden md:rounded-2xl">
+      <section className="relative w-full h-[45vh] min-h-[300px] md:h-[70vh] md:min-h-[500px] overflow-hidden md:rounded-2xl">
         <Image
           src={article.featuredImage}
           alt={article.title}
@@ -49,7 +49,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Article Header */}
-      <article className="py-12 px-6">
+      <article className="py-8 md:py-12 px-4 md:px-6">
         <div className="mx-auto max-w-[720px]">
           {/* Meta */}
           <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -60,10 +60,10 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             {article.isSponsored && <Badge variant="sponsored">Sponsored</Badge>}
           </div>
 
-          <h1 className="font-serif text-4xl md:text-5xl font-bold text-dark leading-tight mb-4">
+          <h1 className="font-serif text-3xl md:text-5xl font-bold text-dark leading-tight mb-4">
             {article.title}
           </h1>
-          <p className="text-xl text-muted leading-relaxed mb-6">{article.excerpt}</p>
+          <p className="text-lg md:text-xl text-muted leading-relaxed mb-6">{article.excerpt}</p>
 
           {/* Featured Image */}
           <div className="relative w-full aspect-[16/9] overflow-hidden rounded-2xl mb-8">
@@ -123,9 +123,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 return (
                   <blockquote
                     key={i}
-                    className="border-l-[3px] border-accent pl-8 py-4 my-10"
+                    className="border-l-[3px] border-accent pl-5 md:pl-8 py-4 my-8 md:my-10"
                   >
-                    <p className="font-serif text-2xl md:text-[28px] italic text-accent leading-relaxed">
+                    <p className="font-serif text-xl md:text-[28px] italic text-accent leading-relaxed">
                       {cleaned}
                     </p>
                   </blockquote>
@@ -155,7 +155,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               href={sponsor.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="my-10 p-6 border border-border rounded-xl flex items-center gap-4 hover:border-accent/30 hover:bg-accent/[0.02] transition-colors group block"
+              className="my-8 md:my-10 p-4 md:p-6 border border-border rounded-xl flex items-center gap-4 hover:border-accent/30 hover:bg-accent/[0.02] transition-colors group block"
             >
               {sponsor.logo ? (
                 <Image
@@ -216,7 +216,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       </article>
 
       {/* Newsletter CTA */}
-      <section className="py-12 px-6 bg-cream-dark">
+      <section className="py-10 md:py-12 px-4 md:px-6 bg-cream-dark">
         <div className="mx-auto max-w-lg text-center">
           <p className="font-serif text-2xl font-bold text-dark mb-2">
             Enjoyed this story?
@@ -227,7 +227,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
       </section>
 
       {/* Related Stories */}
-      <section className="py-16 px-6">
+      <section className="py-10 md:py-16 px-4 md:px-6">
         <div className="mx-auto max-w-[1280px]">
           <h3 className="font-serif text-sm uppercase tracking-[0.15em] text-dark mb-8">
             More Stories

@@ -9,10 +9,10 @@ export default async function FeaturedStory() {
   const featured = articles[1];
 
   return (
-    <section className="py-20 px-6 bg-dark-light">
+    <section className="py-12 md:py-20 px-4 md:px-6 bg-dark-light">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeader title="Featured" light />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
           <Link href={`/stories/${featured.slug}`} className="group block overflow-hidden rounded-2xl">
             <div className="relative aspect-[3/2] overflow-hidden rounded-2xl">
               <Image

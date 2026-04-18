@@ -8,10 +8,10 @@ export default async function ReelsPreview() {
   const displayReels = reels.slice(0, 4);
 
   return (
-    <section className="py-20 px-6">
+    <section className="py-12 md:py-20 px-4 md:px-6">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeader title="Reels" viewAllHref="/reels" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           {displayReels.map((reel) => (
             <Link key={reel.id} href="/reels" className="group block">
               <div className="relative aspect-[9/16] overflow-hidden rounded-2xl mb-3">
