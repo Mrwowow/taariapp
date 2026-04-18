@@ -14,6 +14,9 @@ const navItems = [
   { label: 'Submissions', href: '/admin/submissions', icon: '◎' },
   { label: 'Change Makers', href: '/admin/change-makers', icon: '★' },
   { label: 'Sponsors', href: '/admin/sponsors', icon: '◆' },
+  { label: 'Team Members', href: '/admin/team-members', icon: '♦' },
+  { label: 'Partnerships', href: '/admin/partnerships', icon: '⬡' },
+  { label: 'Messages', href: '/admin/contact-messages', icon: '✉' },
   { label: 'Users', href: '/admin/users', icon: '◉' },
 ];
 

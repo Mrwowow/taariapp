@@ -27,6 +27,7 @@ export interface City {
   heroImage: string;
   description: string;
   storyCount: number;
+  sortOrder: number;
 }
 
 export interface Author {
@@ -138,7 +139,7 @@ export interface ChangeMaker {
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
 interface CityRow extends RowDataPacket {
-  id: number; name: string; slug: string; hero_image: string; description: string; story_count: number;
+  id: number; name: string; slug: string; hero_image: string; description: string; story_count: number; sort_order: number;
 }
 
 interface AuthorRow extends RowDataPacket {
@@ -191,7 +192,7 @@ interface ChangeMakerRow extends RowDataPacket {
 }
 
 function rowToCity(row: CityRow): City & { id: string } {
-  return { id: String(row.id), name: row.name, slug: row.slug, heroImage: row.hero_image, description: row.description, storyCount: row.story_count };
+  return { id: String(row.id), name: row.name, slug: row.slug, heroImage: row.hero_image, description: row.description, storyCount: row.story_count, sortOrder: row.sort_order ?? 0 };
 }
 
 async function getCityById(id: number): Promise<City> {
@@ -208,9 +209,34 @@ async function getAuthorById(id: number): Promise<Author> {
 
 // ── Cities ───────────────────────────────────────────────────────────────────
 
-export async function getCities(): Promise<City[]> {
-  const [rows] = await pool.execute<CityRow[]>('SELECT * FROM cities ORDER BY name');
-  return Promise.all(rows.map(rowToCity));
+export async function getCities(): Promise<(City & { id: string })[]> {
+  try {
+    const [rows] = await pool.execute<(CityRow & { article_count: number })[]>(
+      `SELECT c.*, COALESCE(ac.cnt, 0) AS article_count
+       FROM cities c
+       LEFT JOIN (SELECT city_id, COUNT(*) AS cnt FROM articles GROUP BY city_id) ac ON ac.city_id = c.id
+       ORDER BY c.sort_order ASC, c.name ASC`
+    );
+    return rows.map((row) => ({
+      ...rowToCity(row),
+      storyCount: row.article_count,
+    }));
+  } catch (err: unknown) {
+    // sort_order column may not exist yet (pre-migration). Fall back.
+    if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'ER_BAD_FIELD_ERROR') {
+      const [rows] = await pool.execute<(CityRow & { article_count: number })[]>(
+        `SELECT c.*, COALESCE(ac.cnt, 0) AS article_count
+         FROM cities c
+         LEFT JOIN (SELECT city_id, COUNT(*) AS cnt FROM articles GROUP BY city_id) ac ON ac.city_id = c.id
+         ORDER BY c.name ASC`
+      );
+      return rows.map((row) => ({
+        ...rowToCity(row),
+        storyCount: row.article_count,
+      }));
+    }
+    throw err;
+  }
 }
 
 export async function getCityBySlug(slug: string): Promise<City | undefined> {
@@ -225,15 +251,15 @@ export async function getCityByIdPublic(id: string): Promise<(City & { id: strin
   return rowToCity(rows[0]);
 }
 
-export async function createCity(data: { name: string; slug: string; heroImage: string; description: string }): Promise<City & { id: string }> {
+export async function createCity(data: { name: string; slug: string; heroImage: string; description: string; sortOrder?: number }): Promise<City & { id: string }> {
   const [result] = await pool.execute<ResultSetHeader>(
-    'INSERT INTO cities (name, slug, hero_image, description, story_count) VALUES (?, ?, ?, ?, 0)',
-    [data.name, data.slug, data.heroImage, data.description]
+    'INSERT INTO cities (name, slug, hero_image, description, story_count, sort_order) VALUES (?, ?, ?, ?, 0, ?)',
+    [data.name, data.slug, data.heroImage, data.description, data.sortOrder ?? 0]
   );
   return (await getCityByIdPublic(String(result.insertId)))!;
 }
 
-export async function updateCity(id: string, data: Partial<{ name: string; slug: string; heroImage: string; description: string }>): Promise<(City & { id: string }) | null> {
+export async function updateCity(id: string, data: Partial<{ name: string; slug: string; heroImage: string; description: string; sortOrder: number }>): Promise<(City & { id: string }) | null> {
   const [existing] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE id = ?', [id]);
   if (existing.length === 0) return null;
 
@@ -244,6 +270,7 @@ export async function updateCity(id: string, data: Partial<{ name: string; slug:
   if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
   if (data.heroImage !== undefined) { fields.push('hero_image = ?'); values.push(data.heroImage); }
   if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+  if (data.sortOrder !== undefined) { fields.push('sort_order = ?'); values.push(data.sortOrder); }
 
   if (fields.length > 0) {
     values.push(id);
@@ -894,4 +921,210 @@ export async function addNewsletterSubscriber(email: string): Promise<boolean> {
   } catch {
     return false; // duplicate
   }
+}
+
+// ── Team Members ────────────────────────────────────────────────────────────
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  bio: string;
+  photo: string;
+  email: string;
+  linkedIn: string;
+  sortOrder: number;
+}
+
+interface TeamMemberRow extends RowDataPacket {
+  id: number; name: string; role: string; bio: string; photo: string;
+  email: string; linked_in: string; sort_order: number;
+}
+
+function rowToTeamMember(row: TeamMemberRow): TeamMember {
+  return {
+    id: String(row.id), name: row.name, role: row.role, bio: row.bio,
+    photo: row.photo ?? '', email: row.email ?? '', linkedIn: row.linked_in ?? '',
+    sortOrder: row.sort_order ?? 0,
+  };
+}
+
+export async function getTeamMembers(): Promise<TeamMember[]> {
+  const [rows] = await pool.execute<TeamMemberRow[]>('SELECT * FROM team_members ORDER BY sort_order ASC, name ASC');
+  return rows.map(rowToTeamMember);
+}
+
+export async function getTeamMemberById(id: string): Promise<TeamMember | undefined> {
+  const [rows] = await pool.execute<TeamMemberRow[]>('SELECT * FROM team_members WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToTeamMember(rows[0]);
+}
+
+export async function createTeamMember(data: Partial<TeamMember>): Promise<TeamMember> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO team_members (name, role, bio, photo, email, linked_in, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [data.name ?? '', data.role ?? '', data.bio ?? '', data.photo ?? '', data.email ?? '', data.linkedIn ?? '', data.sortOrder ?? 0],
+  );
+  return (await getTeamMemberById(String(result.insertId)))!;
+}
+
+export async function updateTeamMember(id: string, data: Partial<TeamMember>): Promise<TeamMember | null> {
+  const [existing] = await pool.execute<TeamMemberRow[]>('SELECT id FROM team_members WHERE id = ?', [id]);
+  if (existing.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.role !== undefined) { fields.push('role = ?'); values.push(data.role); }
+  if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
+  if (data.photo !== undefined) { fields.push('photo = ?'); values.push(data.photo); }
+  if (data.email !== undefined) { fields.push('email = ?'); values.push(data.email); }
+  if (data.linkedIn !== undefined) { fields.push('linked_in = ?'); values.push(data.linkedIn); }
+  if (data.sortOrder !== undefined) { fields.push('sort_order = ?'); values.push(data.sortOrder); }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.execute(`UPDATE team_members SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return (await getTeamMemberById(id)) ?? null;
+}
+
+export async function deleteTeamMember(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM team_members WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// ── Partnerships ────────────────────────────────────────────────────────────
+
+export interface Partnership {
+  id: string;
+  name: string;
+  logo: string;
+  description: string;
+  url: string;
+  type: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+interface PartnershipRow extends RowDataPacket {
+  id: number; name: string; logo: string; description: string; url: string;
+  type: string; sort_order: number; active: number;
+}
+
+function rowToPartnership(row: PartnershipRow): Partnership {
+  return {
+    id: String(row.id), name: row.name, logo: row.logo ?? '', description: row.description ?? '',
+    url: row.url ?? '', type: row.type ?? 'partner', sortOrder: row.sort_order ?? 0,
+    active: !!row.active,
+  };
+}
+
+export async function getPartnerships(): Promise<Partnership[]> {
+  const [rows] = await pool.execute<PartnershipRow[]>('SELECT * FROM partnerships ORDER BY sort_order ASC, name ASC');
+  return rows.map(rowToPartnership);
+}
+
+export async function getActivePartnerships(): Promise<Partnership[]> {
+  const [rows] = await pool.execute<PartnershipRow[]>('SELECT * FROM partnerships WHERE active = 1 ORDER BY sort_order ASC, name ASC');
+  return rows.map(rowToPartnership);
+}
+
+export async function getPartnershipById(id: string): Promise<Partnership | undefined> {
+  const [rows] = await pool.execute<PartnershipRow[]>('SELECT * FROM partnerships WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToPartnership(rows[0]);
+}
+
+export async function createPartnership(data: Partial<Partnership>): Promise<Partnership> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO partnerships (name, logo, description, url, type, sort_order, active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [data.name ?? '', data.logo ?? '', data.description ?? '', data.url ?? '', data.type ?? 'partner', data.sortOrder ?? 0, data.active === false ? 0 : 1],
+  );
+  return (await getPartnershipById(String(result.insertId)))!;
+}
+
+export async function updatePartnership(id: string, data: Partial<Partnership>): Promise<Partnership | null> {
+  const [existing] = await pool.execute<PartnershipRow[]>('SELECT id FROM partnerships WHERE id = ?', [id]);
+  if (existing.length === 0) return null;
+
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.logo !== undefined) { fields.push('logo = ?'); values.push(data.logo); }
+  if (data.description !== undefined) { fields.push('description = ?'); values.push(data.description); }
+  if (data.url !== undefined) { fields.push('url = ?'); values.push(data.url); }
+  if (data.type !== undefined) { fields.push('type = ?'); values.push(data.type); }
+  if (data.sortOrder !== undefined) { fields.push('sort_order = ?'); values.push(data.sortOrder); }
+  if (data.active !== undefined) { fields.push('active = ?'); values.push(data.active ? 1 : 0); }
+
+  if (fields.length > 0) {
+    values.push(id);
+    await pool.execute(`UPDATE partnerships SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
+
+  return (await getPartnershipById(id)) ?? null;
+}
+
+export async function deletePartnership(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM partnerships WHERE id = ?', [id]);
+  return result.affectedRows > 0;
+}
+
+// ── Contact Messages ────────────────────────────────────────────────────────
+
+export interface ContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'unread' | 'read' | 'replied';
+  submittedAt: string;
+}
+
+interface ContactMessageRow extends RowDataPacket {
+  id: number; name: string; email: string; subject: string; message: string;
+  status: string; submitted_at: string;
+}
+
+function rowToContactMessage(row: ContactMessageRow): ContactMessage {
+  return {
+    id: String(row.id), name: row.name, email: row.email, subject: row.subject,
+    message: row.message, status: row.status as ContactMessage['status'],
+    submittedAt: row.submitted_at,
+  };
+}
+
+export async function getContactMessages(): Promise<ContactMessage[]> {
+  const [rows] = await pool.execute<ContactMessageRow[]>('SELECT * FROM contact_messages ORDER BY submitted_at DESC');
+  return rows.map(rowToContactMessage);
+}
+
+export async function getContactMessageById(id: string): Promise<ContactMessage | undefined> {
+  const [rows] = await pool.execute<ContactMessageRow[]>('SELECT * FROM contact_messages WHERE id = ?', [id]);
+  if (rows.length === 0) return undefined;
+  return rowToContactMessage(rows[0]);
+}
+
+export async function createContactMessage(data: { name: string; email: string; subject: string; message: string }): Promise<ContactMessage> {
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)',
+    [data.name, data.email, data.subject, data.message],
+  );
+  return (await getContactMessageById(String(result.insertId)))!;
+}
+
+export async function updateContactMessageStatus(id: string, status: ContactMessage['status']): Promise<ContactMessage | null> {
+  const [result] = await pool.execute<ResultSetHeader>('UPDATE contact_messages SET status = ? WHERE id = ?', [status, id]);
+  if (result.affectedRows === 0) return null;
+  return (await getContactMessageById(id)) ?? null;
+}
+
+export async function deleteContactMessage(id: string): Promise<boolean> {
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM contact_messages WHERE id = ?', [id]);
+  return result.affectedRows > 0;
 }

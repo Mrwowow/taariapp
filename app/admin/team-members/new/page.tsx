@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
 import ImageUpload from '@/components/admin/ImageUpload';
@@ -9,68 +9,52 @@ import ImageUpload from '@/components/admin/ImageUpload';
 const inputClass =
   'border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A] text-sm';
 
-export default function EditCityPage() {
+export default function NewTeamMemberPage() {
   const router = useRouter();
-  const { id } = useParams<{ id: string }>();
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
-    slug: '',
-    heroImage: '',
-    description: '',
-    sortOrder: '0',
+    role: '',
+    bio: '',
+    photo: '',
+    email: '',
+    linkedIn: '',
+    sortOrder: 0,
   });
-
-  useEffect(() => {
-    fetch(`/api/admin/cities/${id}`)
-      .then((r) => r.json())
-      .then((c) => {
-        setForm({
-          name: c.name ?? '',
-          slug: c.slug ?? '',
-          heroImage: c.heroImage ?? '',
-          description: c.description ?? '',
-          sortOrder: String(c.sortOrder ?? 0),
-        });
-        setLoading(false);
-      });
-  }, [id]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.name || !form.role) { setError('Name and role are required.'); return; }
     setSaving(true);
     setError('');
 
-    const res = await fetch(`/api/admin/cities/${id}`, {
-      method: 'PUT',
+    const res = await fetch('/api/admin/team-members', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, sortOrder: parseInt(form.sortOrder) || 0 }),
+      body: JSON.stringify(form),
     });
 
     if (res.ok) {
-      router.push('/admin/cities');
+      router.push('/admin/team-members');
     } else {
-      setError('Failed to update city.');
+      setError('Failed to create team member.');
       setSaving(false);
     }
   }
 
-  if (loading) return <div className="text-[#6B6B6B] text-sm py-8 text-center">Loading…</div>;
-
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/admin/cities" className="text-[#6B6B6B] hover:text-[#1A1A1A] text-sm">
-          ← Cities
+        <Link href="/admin/team-members" className="text-[#6B6B6B] hover:text-[#1A1A1A] text-sm">
+          ← Team Members
         </Link>
         <span className="text-gray-300">/</span>
         <h1
           className="text-2xl font-bold text-[#1A1A1A]"
           style={{ fontFamily: 'Playfair Display, serif' }}
         >
-          Edit City
+          New Team Member
         </h1>
       </div>
 
@@ -81,52 +65,76 @@ export default function EditCityPage() {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-5">
-        <FormField label="City Name" htmlFor="name" required>
+        <FormField label="Name" htmlFor="name" required>
           <input
             id="name"
             className={inputClass}
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+            placeholder="Jane Doe"
           />
         </FormField>
 
-        <FormField label="Slug" htmlFor="slug" required hint="URL-friendly identifier">
+        <FormField label="Role / Title" htmlFor="role" required>
           <input
-            id="slug"
+            id="role"
             className={inputClass}
-            value={form.slug}
-            onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+            value={form.role}
+            onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+            placeholder="Editor-in-Chief"
           />
         </FormField>
 
-        <FormField label="Description" htmlFor="description">
+        <FormField label="Bio" htmlFor="bio">
           <textarea
-            id="description"
+            id="bio"
             rows={4}
-            className={inputClass}
-            value={form.description}
-            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-          />
-        </FormField>
-
-        <FormField label="Display Order" htmlFor="sortOrder" hint="Lower numbers appear first. Cities with the same order are sorted by name.">
-          <input
-            id="sortOrder"
-            type="number"
-            min={0}
-            className={inputClass}
-            value={form.sortOrder}
-            onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
+            className={inputClass + ' resize-none'}
+            value={form.bio}
+            onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
+            placeholder="A short bio…"
           />
         </FormField>
 
         <ImageUpload
-          value={form.heroImage}
-          onChange={(url) => setForm((f) => ({ ...f, heroImage: url }))}
-          folder="taari/cities"
-          label="Hero Image"
-          aspect="aspect-video"
+          value={form.photo}
+          onChange={(url) => setForm((f) => ({ ...f, photo: url }))}
+          folder="taari/team"
+          label="Photo"
+          aspect="aspect-square"
         />
+
+        <FormField label="Email" htmlFor="email">
+          <input
+            id="email"
+            type="email"
+            className={inputClass}
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            placeholder="jane@taari.com"
+          />
+        </FormField>
+
+        <FormField label="LinkedIn URL" htmlFor="linkedIn">
+          <input
+            id="linkedIn"
+            type="url"
+            className={inputClass}
+            value={form.linkedIn}
+            onChange={(e) => setForm((f) => ({ ...f, linkedIn: e.target.value }))}
+            placeholder="https://linkedin.com/in/janedoe"
+          />
+        </FormField>
+
+        <FormField label="Sort Order" htmlFor="sortOrder" hint="Lower numbers appear first.">
+          <input
+            id="sortOrder"
+            type="number"
+            className={inputClass}
+            value={form.sortOrder}
+            onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))}
+          />
+        </FormField>
 
         <div className="flex gap-3 pt-2">
           <button
@@ -134,10 +142,10 @@ export default function EditCityPage() {
             disabled={saving}
             className="bg-[#1A1A1A] text-white px-6 py-2 rounded text-sm font-medium hover:bg-[#C8956C] transition-colors disabled:opacity-50"
           >
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Creating…' : 'Create Member'}
           </button>
           <Link
-            href="/admin/cities"
+            href="/admin/team-members"
             className="border border-gray-200 text-gray-600 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel

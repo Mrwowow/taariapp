@@ -9,7 +9,7 @@ import ImageUpload from '@/components/admin/ImageUpload';
 const inputClass =
   'border border-gray-200 rounded px-3 py-2 w-full focus:outline-none focus:border-[#1A1A1A] focus:ring-1 focus:ring-[#1A1A1A] text-sm';
 
-export default function EditCityPage() {
+export default function EditPartnershipPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [saving, setSaving] = useState(false);
@@ -17,22 +17,26 @@ export default function EditCityPage() {
   const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
-    slug: '',
-    heroImage: '',
+    logo: '',
     description: '',
-    sortOrder: '0',
+    url: '',
+    type: 'partner',
+    sortOrder: 0,
+    active: true,
   });
 
   useEffect(() => {
-    fetch(`/api/admin/cities/${id}`)
+    fetch(`/api/admin/partnerships/${id}`)
       .then((r) => r.json())
-      .then((c) => {
+      .then((p) => {
         setForm({
-          name: c.name ?? '',
-          slug: c.slug ?? '',
-          heroImage: c.heroImage ?? '',
-          description: c.description ?? '',
-          sortOrder: String(c.sortOrder ?? 0),
+          name: p.name ?? '',
+          logo: p.logo ?? '',
+          description: p.description ?? '',
+          url: p.url ?? '',
+          type: p.type ?? 'partner',
+          sortOrder: p.sortOrder ?? 0,
+          active: p.active ?? true,
         });
         setLoading(false);
       });
@@ -40,19 +44,20 @@ export default function EditCityPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.name) { setError('Name is required.'); return; }
     setSaving(true);
     setError('');
 
-    const res = await fetch(`/api/admin/cities/${id}`, {
+    const res = await fetch(`/api/admin/partnerships/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, sortOrder: parseInt(form.sortOrder) || 0 }),
+      body: JSON.stringify(form),
     });
 
     if (res.ok) {
-      router.push('/admin/cities');
+      router.push('/admin/partnerships');
     } else {
-      setError('Failed to update city.');
+      setError('Failed to update partnership.');
       setSaving(false);
     }
   }
@@ -62,15 +67,15 @@ export default function EditCityPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/admin/cities" className="text-[#6B6B6B] hover:text-[#1A1A1A] text-sm">
-          ← Cities
+        <Link href="/admin/partnerships" className="text-[#6B6B6B] hover:text-[#1A1A1A] text-sm">
+          ← Partnerships
         </Link>
         <span className="text-gray-300">/</span>
         <h1
           className="text-2xl font-bold text-[#1A1A1A]"
           style={{ fontFamily: 'Playfair Display, serif' }}
         >
-          Edit City
+          Edit Partnership
         </h1>
       </div>
 
@@ -81,7 +86,7 @@ export default function EditCityPage() {
       )}
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 space-y-5">
-        <FormField label="City Name" htmlFor="name" required>
+        <FormField label="Name" htmlFor="name" required>
           <input
             id="name"
             className={inputClass}
@@ -90,43 +95,70 @@ export default function EditCityPage() {
           />
         </FormField>
 
-        <FormField label="Slug" htmlFor="slug" required hint="URL-friendly identifier">
-          <input
-            id="slug"
+        <FormField label="Type" htmlFor="type">
+          <select
+            id="type"
             className={inputClass}
-            value={form.slug}
-            onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-          />
+            value={form.type}
+            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
+          >
+            <option value="partner">Partner</option>
+            <option value="media">Media Partner</option>
+            <option value="community">Community Partner</option>
+            <option value="institutional">Institutional Partner</option>
+            <option value="brand">Brand Partner</option>
+          </select>
         </FormField>
 
         <FormField label="Description" htmlFor="description">
           <textarea
             id="description"
-            rows={4}
-            className={inputClass}
+            rows={3}
+            className={inputClass + ' resize-none'}
             value={form.description}
             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
           />
         </FormField>
 
-        <FormField label="Display Order" htmlFor="sortOrder" hint="Lower numbers appear first. Cities with the same order are sorted by name.">
+        <FormField label="URL" htmlFor="url">
           <input
-            id="sortOrder"
-            type="number"
-            min={0}
+            id="url"
+            type="url"
             className={inputClass}
-            value={form.sortOrder}
-            onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
+            value={form.url}
+            onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
           />
         </FormField>
 
         <ImageUpload
-          value={form.heroImage}
-          onChange={(url) => setForm((f) => ({ ...f, heroImage: url }))}
-          folder="taari/cities"
-          label="Hero Image"
-          aspect="aspect-video"
+          value={form.logo}
+          onChange={(url) => setForm((f) => ({ ...f, logo: url }))}
+          folder="taari/partnerships"
+          label="Logo"
+          aspect="aspect-square"
         />
+
+        <FormField label="Sort Order" htmlFor="sortOrder" hint="Lower numbers appear first.">
+          <input
+            id="sortOrder"
+            type="number"
+            className={inputClass}
+            value={form.sortOrder}
+            onChange={(e) => setForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))}
+          />
+        </FormField>
+
+        <FormField label="Status" htmlFor="active">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.active}
+              onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
+              className="rounded border-gray-300"
+            />
+            <span className="text-sm text-[#1A1A1A]">Active (visible on public page)</span>
+          </label>
+        </FormField>
 
         <div className="flex gap-3 pt-2">
           <button
@@ -137,7 +169,7 @@ export default function EditCityPage() {
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
           <Link
-            href="/admin/cities"
+            href="/admin/partnerships"
             className="border border-gray-200 text-gray-600 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors"
           >
             Cancel

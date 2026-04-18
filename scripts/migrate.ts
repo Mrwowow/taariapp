@@ -26,6 +26,15 @@ async function migrate() {
     `);
     console.log('✓ cities');
 
+    // Ensure sort_order column exists on older installs
+    const [sortOrderCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cities' AND COLUMN_NAME = 'sort_order'"
+    );
+    if ((sortOrderCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE cities ADD COLUMN sort_order INT DEFAULT 0 AFTER story_count');
+      console.log('✓ cities.sort_order (added)');
+    }
+
     // ── Authors ─────────────────────────────────────────────────────
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS authors (
@@ -298,6 +307,55 @@ async function migrate() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log('✓ banners');
+
+    // ── Team Members ─────────────────────────────────────────────────
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS team_members (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        role VARCHAR(200) NOT NULL,
+        bio TEXT,
+        photo TEXT,
+        email VARCHAR(300),
+        linked_in TEXT,
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ team_members');
+
+    // ── Partnerships ───────────────────────────────────────────────────
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS partnerships (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        logo TEXT,
+        description TEXT,
+        url TEXT,
+        type VARCHAR(50) DEFAULT 'partner',
+        sort_order INT DEFAULT 0,
+        active TINYINT(1) DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ partnerships');
+
+    // ── Contact Messages ───────────────────────────────────────────────
+    await conn.execute(`
+      CREATE TABLE IF NOT EXISTS contact_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(200) NOT NULL,
+        email VARCHAR(300) NOT NULL,
+        subject VARCHAR(500) NOT NULL,
+        message TEXT NOT NULL,
+        status ENUM('unread','read','replied') DEFAULT 'unread',
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log('✓ contact_messages');
 
     console.log('\n✅ All tables created successfully!');
   } finally {

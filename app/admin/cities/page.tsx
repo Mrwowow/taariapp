@@ -10,6 +10,7 @@ interface CityItem {
   heroImage: string;
   description: string;
   storyCount: number;
+  sortOrder: number;
 }
 
 export default function CitiesPage() {
@@ -27,6 +28,30 @@ export default function CitiesPage() {
   async function handleDelete(id: string, name: string) {
     if (!window.confirm(`Delete city "${name}"? This will not remove associated articles/interviews. This cannot be undone.`)) return;
     await fetch(`/api/admin/cities/${id}`, { method: 'DELETE' });
+    load();
+  }
+
+  async function handleMove(id: string, direction: 'up' | 'down') {
+    const idx = cities.findIndex((c) => c.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= cities.length) return;
+
+    const a = cities[idx];
+    const b = cities[swapIdx];
+
+    await Promise.all([
+      fetch(`/api/admin/cities/${a.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sortOrder: b.sortOrder }),
+      }),
+      fetch(`/api/admin/cities/${b.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sortOrder: a.sortOrder }),
+      }),
+    ]);
     load();
   }
 
@@ -58,7 +83,7 @@ export default function CitiesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {cities.map((city) => (
+          {cities.map((city, i) => (
             <div
               key={city.id}
               className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
@@ -71,6 +96,28 @@ export default function CitiesPage() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">No image</div>
                 )}
+                {/* Order controls */}
+                <div className="absolute top-2 right-2 flex gap-1">
+                  <button
+                    onClick={() => handleMove(city.id, 'up')}
+                    disabled={i === 0}
+                    className="w-7 h-7 rounded bg-white/90 text-gray-700 text-xs flex items-center justify-center hover:bg-white shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move up"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => handleMove(city.id, 'down')}
+                    disabled={i === cities.length - 1}
+                    className="w-7 h-7 rounded bg-white/90 text-gray-700 text-xs flex items-center justify-center hover:bg-white shadow-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Move down"
+                  >
+                    ▼
+                  </button>
+                </div>
+                <span className="absolute top-2 left-2 w-7 h-7 rounded bg-[#1A1A1A]/80 text-white text-xs font-bold flex items-center justify-center">
+                  {i + 1}
+                </span>
               </div>
 
               <div className="p-5">
