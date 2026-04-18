@@ -160,23 +160,46 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
       )}
 
       {/* Sponsors */}
-      <section className="py-16 px-6 border-t border-border">
-        <div className="mx-auto max-w-[1280px] text-center">
-          <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-muted mb-8">
-            Sponsors
-          </h3>
-          <div className="flex justify-center gap-12 flex-wrap">
-            {sponsors.map((sponsor) => (
-              <div
-                key={sponsor.name}
-                className="w-20 h-20 bg-border/30 flex items-center justify-center text-[10px] text-muted font-medium grayscale hover:grayscale-0 transition-all cursor-pointer"
-              >
-                LOGO
-              </div>
-            ))}
+      {sponsors.length > 0 && (
+        <section className="py-16 px-6 border-t border-border">
+          <div className="mx-auto max-w-[1280px] text-center">
+            <h3 className="text-xs font-medium uppercase tracking-[0.15em] text-muted mb-8">
+              Our Partners
+            </h3>
+            <div className="flex justify-center gap-8 flex-wrap">
+              {sponsors.map((sponsor) => (
+                <a
+                  key={sponsor.id}
+                  href={sponsor.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative w-24 h-24 rounded-xl overflow-hidden border border-border group"
+                >
+                  {sponsor.logo ? (
+                    <Image
+                      src={sponsor.logo}
+                      alt={sponsor.name}
+                      fill
+                      className="object-cover grayscale group-hover:grayscale-0 transition-all duration-300"
+                      sizes="96px"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-white/5 flex items-center justify-center text-xl text-muted font-bold">
+                      {sponsor.name.charAt(0)}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-dark/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-2 text-center">
+                    <p className="text-[11px] font-semibold text-cream leading-tight">{sponsor.name}</p>
+                    {sponsor.tagline && (
+                      <p className="text-[9px] text-muted mt-1 line-clamp-2">{sponsor.tagline}</p>
+                    )}
+                  </div>
+                </a>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   );
 }

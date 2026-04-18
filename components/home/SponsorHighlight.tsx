@@ -12,76 +12,55 @@ export default async function SponsorHighlight() {
           Our Partners
         </p>
 
-        {/* Single sponsor — featured layout */}
-        {sponsors.length === 1 && (
-          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8 justify-center">
+        <div className={`grid gap-6 ${
+          sponsors.length === 1
+            ? 'grid-cols-1 max-w-xs mx-auto'
+            : sponsors.length === 2
+              ? 'grid-cols-2 max-w-lg mx-auto'
+              : sponsors.length === 3
+                ? 'grid-cols-2 md:grid-cols-3'
+                : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
+        }`}>
+          {sponsors.map((sponsor) => (
             <a
-              href={sponsors[0].url}
+              key={sponsor.id}
+              href={sponsor.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-4 group"
+              className="relative aspect-square rounded-xl border border-border overflow-hidden group"
             >
-              {sponsors[0].logo ? (
+              {/* Logo — centered, cover-fit */}
+              {sponsor.logo ? (
                 <Image
-                  src={sponsors[0].logo}
-                  alt={sponsors[0].name}
-                  width={48}
-                  height={48}
-                  className="rounded object-contain"
+                  src={sponsor.logo}
+                  alt={sponsor.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, 25vw"
                 />
               ) : (
-                <div className="w-12 h-12 bg-white/5 border border-border rounded flex items-center justify-center text-xs text-muted font-medium shrink-0">
-                  {sponsors[0].name.charAt(0)}
+                <div className="absolute inset-0 bg-white/5 flex items-center justify-center text-3xl text-muted font-bold">
+                  {sponsor.name.charAt(0)}
                 </div>
               )}
-              <div>
-                <p className="text-sm font-medium text-cream group-hover:text-accent transition-colors">
-                  {sponsors[0].name}
+
+              {/* Hover overlay with name + tagline */}
+              <div className="absolute inset-0 bg-dark/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-4 text-center">
+                <p className="text-sm font-semibold text-cream">
+                  {sponsor.name}
                 </p>
-                {sponsors[0].tagline && (
-                  <p className="text-xs text-muted mt-0.5">{sponsors[0].tagline}</p>
+                {sponsor.tagline && (
+                  <p className="text-xs text-muted mt-1.5 line-clamp-3">
+                    {sponsor.tagline}
+                  </p>
                 )}
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-accent mt-3">
+                  Learn More &rarr;
+                </span>
               </div>
             </a>
-          </div>
-        )}
-
-        {/* Multiple sponsors — grid layout */}
-        {sponsors.length > 1 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {sponsors.map((sponsor) => (
-              <a
-                key={sponsor.id}
-                href={sponsor.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center gap-3 p-6 rounded-xl border border-border hover:border-accent/30 hover:bg-white/[0.02] transition-colors group"
-              >
-                {sponsor.logo ? (
-                  <Image
-                    src={sponsor.logo}
-                    alt={sponsor.name}
-                    width={56}
-                    height={56}
-                    className="rounded object-contain"
-                  />
-                ) : (
-                  <div className="w-14 h-14 bg-white/5 border border-border rounded flex items-center justify-center text-lg text-muted font-medium">
-                    {sponsor.name.charAt(0)}
-                  </div>
-                )}
-                <div className="text-center">
-                  <p className="text-sm font-medium text-cream group-hover:text-accent transition-colors">
-                    {sponsor.name}
-                  </p>
-                  {sponsor.tagline && (
-                    <p className="text-xs text-muted mt-1 line-clamp-2">{sponsor.tagline}</p>
-                  )}
-                </div>
-              </a>
-            ))}
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </section>
   );
