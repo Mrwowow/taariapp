@@ -4,6 +4,7 @@ import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 import ImageLightbox from "@/components/ui/ImageLightbox";
 import ShareButtons from "@/components/ui/ShareButtons";
+import ArticleBody from "@/components/article/ArticleBody";
 import { getArticles, getArticleBySlug, getSponsors } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
@@ -110,32 +111,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Article Body */}
-          <div className="space-y-6">
-            {article.body.map((paragraph, i) => {
-              // Skip empty or whitespace-only paragraphs (including &nbsp;)
-              const cleaned = paragraph.replace(/&nbsp;/gi, ' ').trim();
-              if (!cleaned) return null;
-
-              // Pull quote detection (starts with a quote mark)
-              if (cleaned.startsWith('"') || cleaned.startsWith('\u201C')) {
-                return (
-                  <blockquote
-                    key={i}
-                    className="border-l-[3px] border-accent pl-5 md:pl-8 py-4 my-8 md:my-10"
-                  >
-                    <p className="font-serif text-xl md:text-[28px] italic text-accent leading-relaxed">
-                      {cleaned}
-                    </p>
-                  </blockquote>
-                );
-              }
-              return (
-                <p key={i} className="text-lg leading-[1.8] text-dark">
-                  {cleaned}
-                </p>
-              );
-            })}
-          </div>
+          <ArticleBody body={article.body} />
 
           {/* Photo Gallery */}
           {article.gallery.length > 0 && (

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
 import ImageUpload from '@/components/admin/ImageUpload';
 import type { City } from '@/lib/store';
+import FormattingHelp from "@/components/article/FormattingHelp";
 
 const CATEGORIES = ['Culture', 'Music', 'Art', 'Food', 'Community', 'Fashion', 'Tech'];
 
@@ -247,15 +248,16 @@ export default function NewArticleForm() {
           />
         </FormField>
 
-        <FormField label="Body" htmlFor="body" hint="One paragraph per line. Each line becomes a separate paragraph.">
+        <FormField label="Body" htmlFor="body" hint="One paragraph per line. Markdown formatting supported.">
           <textarea
             id="body"
-            className={`${inputClass} resize-y font-mono text-xs`}
-            rows={8}
+            className={`${inputClass} resize-y font-mono text-xs leading-relaxed`}
+            rows={20}
             value={form.body}
             onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))}
-            placeholder="First paragraph...&#10;Second paragraph..."
+            placeholder="## A section heading&#10;First paragraph...&#10;Second paragraph..."
           />
+          <FormattingHelp />
         </FormField>
 
         <div className="grid grid-cols-2 gap-4">
