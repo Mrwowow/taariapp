@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
+import ShareButtons from "@/components/ui/ShareButtons";
 import { getInterviewBySlug, getInterviews } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
@@ -57,6 +58,14 @@ export default async function InterviewDetailPage({ params }: { params: Promise<
               <p className="text-lg text-muted leading-relaxed">
                 {interview.bio}
               </p>
+
+              <div className="mt-8 pt-6 border-t border-border">
+                <ShareButtons
+                  path={`/interviews/${slug}`}
+                  title={`A Conversation with ${interview.name}`}
+                  description={interview.oneLiner || interview.bio}
+                />
+              </div>
             </div>
           </div>
         </div>

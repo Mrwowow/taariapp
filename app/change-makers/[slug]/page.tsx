@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Badge from "@/components/ui/Badge";
+import ShareButtons from "@/components/ui/ShareButtons";
 import { getChangeMakerBySlug, getChangeMakers } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import type { Metadata } from "next";
@@ -126,6 +127,14 @@ export default async function ChangeMakerDetailPage({
                 Recognized {publishedDate}
               </p>
             )}
+
+            <div className="mb-6">
+              <ShareButtons
+                path={`/change-makers/${slug}`}
+                title={`${maker.name} — ${maker.title}`}
+                description={maker.bio || ""}
+              />
+            </div>
 
             {maker.bio && (
               <div className="pt-6 border-t border-border">

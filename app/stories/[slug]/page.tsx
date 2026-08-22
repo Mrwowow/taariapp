@@ -3,6 +3,7 @@ import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 import ImageLightbox from "@/components/ui/ImageLightbox";
+import ShareButtons from "@/components/ui/ShareButtons";
 import { getArticles, getArticleBySlug, getSponsors } from "@/lib/store";
 import { buildMetadata } from "@/lib/metadata";
 import { notFound } from "next/navigation";
@@ -100,15 +101,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Share buttons */}
-          <div className="flex gap-4 py-4 border-t border-b border-border mb-10">
-            {["X", "FB", "LI", "Link"].map((platform) => (
-              <button
-                key={platform}
-                className="w-9 h-9 border border-border flex items-center justify-center text-xs text-muted hover:text-dark hover:border-dark transition-colors"
-              >
-                {platform}
-              </button>
-            ))}
+          <div className="py-4 border-t border-b border-border mb-10">
+            <ShareButtons
+              path={`/stories/${slug}`}
+              title={article.title}
+              description={article.excerpt}
+            />
           </div>
 
           {/* Article Body */}

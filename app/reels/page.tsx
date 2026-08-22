@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import Badge from "@/components/ui/Badge";
+import ShareButtons from "@/components/ui/ShareButtons";
 import type { Reel, City } from "@/lib/store";
 
 export default function ReelsPage() {
@@ -103,9 +104,12 @@ export default function ReelsPage() {
                   </h3>
                   <Badge variant="city">{reel.city.name}</Badge>
                 </div>
-                <button className="text-xs text-muted hover:text-dark transition-colors">
-                  Share
-                </button>
+                <ShareButtons
+                  variant="compact"
+                  path={`/reels?reel=${reel.id}`}
+                  title={reel.title}
+                  description={reel.caption}
+                />
               </div>
             </div>
           ))}
