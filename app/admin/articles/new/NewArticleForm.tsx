@@ -7,6 +7,7 @@ import FormField from '@/components/admin/FormField';
 import ImageUpload from '@/components/admin/ImageUpload';
 import type { City } from '@/lib/store';
 import FormattingHelp from "@/components/article/FormattingHelp";
+import GalleryUpload from "@/components/admin/GalleryUpload";
 
 const CATEGORIES = ['Culture', 'Music', 'Art', 'Food', 'Community', 'Fashion', 'Tech'];
 
@@ -313,42 +314,13 @@ export default function NewArticleForm() {
           aspect="aspect-video"
         />
 
-        {/* Gallery Images */}
-        {form.gallery.length > 0 && (
-          <FormField label={`Gallery Images (${form.gallery.length})`}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">
-              {form.gallery.map((url, i) => (
-                <div key={i} className="relative group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={url}
-                    alt={`Gallery image ${i + 1}`}
-                    className="w-full aspect-square object-cover rounded-lg border border-gray-200 cursor-pointer"
-                    onClick={() => window.open(url, '_blank')}
-                  />
-                  <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, featuredImage: url }))}
-                      title="Set as featured image"
-                      className="w-7 h-7 rounded-full bg-white/90 text-gray-700 text-xs flex items-center justify-center hover:bg-white shadow-sm"
-                    >
-                      ★
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, gallery: f.gallery.filter((_, idx) => idx !== i) }))}
-                      title="Remove from gallery"
-                      className="w-7 h-7 rounded-full bg-red-500/90 text-white text-xs flex items-center justify-center hover:bg-red-600 shadow-sm"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </FormField>
-        )}
+        <GalleryUpload
+          value={form.gallery}
+          onChange={(urls) => setForm((f) => ({ ...f, gallery: urls }))}
+          folder="taari/articles"
+          label="Article Photos & Videos"
+          onSetFeatured={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
+        />
 
         <FormField label="Author Name" htmlFor="authorName">
           <input
