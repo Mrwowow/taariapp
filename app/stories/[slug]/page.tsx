@@ -118,7 +118,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             <div className="my-12">
               <ImageLightbox images={article.gallery} alt={article.title} />
               <p className="text-sm text-muted italic mt-3 text-center">
-                Photo gallery — {article.title}
+                Gallery — {article.title}
               </p>
             </div>
           )}

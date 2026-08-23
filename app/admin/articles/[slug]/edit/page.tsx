@@ -7,6 +7,7 @@ import FormField from '@/components/admin/FormField';
 import ImageUpload from '@/components/admin/ImageUpload';
 import type { Article, City } from '@/lib/store';
 import FormattingHelp from "@/components/article/FormattingHelp";
+import GalleryUpload from "@/components/admin/GalleryUpload";
 
 const CATEGORIES = ['Culture', 'Music', 'Art', 'Food', 'Community', 'Fashion', 'Tech'];
 
@@ -38,6 +39,7 @@ export default function EditArticlePage() {
     readTime: '5',
     featuredImage: '',
     publishedAt: '',
+    gallery: [] as string[],
   });
 
   useEffect(() => {
@@ -59,6 +61,7 @@ export default function EditArticlePage() {
         readTime: String(a.readTime),
         featuredImage: a.featuredImage,
         publishedAt: a.publishedAt,
+        gallery: a.gallery ?? [],
       });
       setLoading(false);
     });
@@ -98,6 +101,7 @@ export default function EditArticlePage() {
       readTime: parseInt(form.readTime) || 5,
       featuredImage: form.featuredImage,
       publishedAt: form.publishedAt,
+      gallery: form.gallery,
     };
 
     const res = await fetch(`/api/admin/articles/${slug}`, {
@@ -229,6 +233,14 @@ export default function EditArticlePage() {
           folder="taari/articles"
           label="Featured Image"
           aspect="aspect-video"
+        />
+
+        <GalleryUpload
+          value={form.gallery}
+          onChange={(urls) => setForm((f) => ({ ...f, gallery: urls }))}
+          folder="taari/articles"
+          label="Article Photos & Videos"
+          onSetFeatured={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
         />
 
         <FormField label="Author Name" htmlFor="authorName">

@@ -1,7 +1,7 @@
 // Database-backed store for TAARi platform — replaces the old in-memory store.
 // All functions are async and query MySQL via the connection pool.
 
-import pool from './db';
+import pool, { withDb } from './db';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 // Normalize a date input for MySQL DATE / DATETIME columns.
@@ -358,27 +358,45 @@ export async function createArticle(data: Article): Promise<Article> {
   const authorId = authorRows[0]?.id ?? 1;
   const cityId = cityRows[0]?.id ?? 1;
 
-  const [result] = await pool.execute<ResultSetHeader>(
-    `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, categories, is_sponsored, is_featured, published_at, read_time)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [data.title, data.slug, data.featuredImage, data.excerpt, JSON.stringify(data.body),
-     authorId, cityId, JSON.stringify(data.categories), data.isSponsored ? 1 : 0,
-     data.isFeatured ? 1 : 0,
-     toMysqlDate(data.publishedAt), data.readTime]
-  );
+  // Article row and its gallery are inserted together so a dropped connection
+  // can't leave a saved article with a half-written gallery.
+  await withDb(async () => {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-  if (data.gallery?.length) {
-    for (let i = 0; i < data.gallery.length; i++) {
-      await pool.execute('INSERT INTO article_gallery (article_id, image_url, sort_order) VALUES (?, ?, ?)',
-        [result.insertId, data.gallery[i], i]);
+      const [result] = await conn.execute<ResultSetHeader>(
+        `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, categories, is_sponsored, is_featured, published_at, read_time)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [data.title, data.slug, data.featuredImage, data.excerpt, JSON.stringify(data.body),
+         authorId, cityId, JSON.stringify(data.categories), data.isSponsored ? 1 : 0,
+         data.isFeatured ? 1 : 0,
+         toMysqlDate(data.publishedAt), data.readTime]
+      );
+
+      if (data.gallery?.length) {
+        for (let i = 0; i < data.gallery.length; i++) {
+          await conn.execute('INSERT INTO article_gallery (article_id, image_url, sort_order) VALUES (?, ?, ?)',
+            [result.insertId, data.gallery[i], i]);
+        }
+      }
+
+      await conn.commit();
+    } catch (err) {
+      try { await conn.rollback(); } catch { /* connection already gone */ }
+      throw err;
+    } finally {
+      conn.release();
     }
-  }
+  });
 
   return (await getArticleBySlug(data.slug))!;
 }
 
 export async function updateArticle(slug: string, data: Partial<Article>): Promise<Article | null> {
-  const [existing] = await pool.execute<ArticleRow[]>('SELECT id FROM articles WHERE slug = ?', [slug]);
+  const [existing] = await withDb(() =>
+    pool.execute<ArticleRow[]>('SELECT id FROM articles WHERE slug = ?', [slug]),
+  );
   if (existing.length === 0) return null;
 
   const fields: string[] = [];
@@ -392,13 +410,46 @@ export async function updateArticle(slug: string, data: Partial<Article>): Promi
   if (data.categories !== undefined) { fields.push('categories = ?'); values.push(JSON.stringify(data.categories)); }
   if (data.isSponsored !== undefined) { fields.push('is_sponsored = ?'); values.push(data.isSponsored ? 1 : 0); }
   if (data.isFeatured !== undefined) { fields.push('is_featured = ?'); values.push(data.isFeatured ? 1 : 0); }
-  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
+  // toMysqlDate returns null (never undefined) for a missing/unparseable date,
+  // so guard on the null to avoid writing NULL into a NOT NULL column.
+  const publishedAt = toMysqlDate(data.publishedAt);
+  if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
   if (data.readTime !== undefined) { fields.push('read_time = ?'); values.push(data.readTime); }
 
-  if (fields.length > 0) {
-    values.push(slug);
-    await pool.execute(`UPDATE articles SET ${fields.join(', ')} WHERE slug = ?`, values);
-  }
+  const articleId = existing[0].id;
+  const gallery = data.gallery;
+
+  // The row update and the gallery replacement must land together: without a
+  // transaction, a dropped connection between them would leave the gallery wiped.
+  await withDb(async () => {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      if (fields.length > 0) {
+        await conn.execute(`UPDATE articles SET ${fields.join(', ')} WHERE slug = ?`, [...values, slug]);
+      }
+
+      // Gallery is a child table, so replace the whole set when it is supplied.
+      if (gallery !== undefined) {
+        await conn.execute('DELETE FROM article_gallery WHERE article_id = ?', [articleId]);
+        for (let i = 0; i < gallery.length; i++) {
+          await conn.execute(
+            'INSERT INTO article_gallery (article_id, image_url, sort_order) VALUES (?, ?, ?)',
+            [articleId, gallery[i], i],
+          );
+        }
+      }
+
+      await conn.commit();
+    } catch (err) {
+      // A dead socket can't carry a rollback; the server discards the txn anyway.
+      try { await conn.rollback(); } catch { /* connection already gone */ }
+      throw err;
+    } finally {
+      conn.release();
+    }
+  });
 
   const newSlug = data.slug ?? slug;
   return (await getArticleBySlug(newSlug)) ?? null;
@@ -467,7 +518,10 @@ export async function updateInterview(slug: string, data: Partial<Interview>): P
   if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
   if (data.oneLiner !== undefined) { fields.push('one_liner = ?'); values.push(data.oneLiner); }
   if (data.questions !== undefined) { fields.push('questions = ?'); values.push(JSON.stringify(data.questions)); }
-  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
+  // toMysqlDate returns null (never undefined) for a missing/unparseable date,
+  // so guard on the null to avoid writing NULL into a NOT NULL column.
+  const publishedAt = toMysqlDate(data.publishedAt);
+  if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
 
   if (fields.length > 0) {
     values.push(slug);
@@ -534,7 +588,10 @@ export async function updateReel(id: string, data: Partial<Reel>): Promise<Reel 
   if (data.title !== undefined) { fields.push('title = ?'); values.push(data.title); }
   if (data.caption !== undefined) { fields.push('caption = ?'); values.push(data.caption); }
   if (data.thumbnail !== undefined) { fields.push('thumbnail = ?'); values.push(data.thumbnail); }
-  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
+  // toMysqlDate returns null (never undefined) for a missing/unparseable date,
+  // so guard on the null to avoid writing NULL into a NOT NULL column.
+  const publishedAt = toMysqlDate(data.publishedAt);
+  if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
 
   if (fields.length > 0) {
     values.push(id);
@@ -804,7 +861,10 @@ export async function updateChangeMaker(id: string, data: Partial<ChangeMaker>):
   if (data.year !== undefined) { fields.push('year = ?'); values.push(data.year); }
   if (data.featured !== undefined) { fields.push('featured = ?'); values.push(data.featured ? 1 : 0); }
   if (data.videoUrl !== undefined) { fields.push('video_url = ?'); values.push(data.videoUrl.trim() || null); }
-  if (toMysqlDate(data.publishedAt) !== undefined) { fields.push('published_at = ?'); values.push(toMysqlDate(data.publishedAt)); }
+  // toMysqlDate returns null (never undefined) for a missing/unparseable date,
+  // so guard on the null to avoid writing NULL into a NOT NULL column.
+  const publishedAt = toMysqlDate(data.publishedAt);
+  if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
 
   if (fields.length > 0) {
     values.push(id);
