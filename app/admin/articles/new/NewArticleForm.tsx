@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
+import AuthorSelect from '@/components/admin/AuthorSelect';
 import ImageUpload from '@/components/admin/ImageUpload';
 import type { City } from '@/lib/store';
 import FormattingHelp from "@/components/article/FormattingHelp";
@@ -43,6 +44,7 @@ export default function NewArticleForm() {
     isSponsored: false,
     isFeatured: false,
     authorName: '',
+    authorSlug: '',
     readTime: '5',
     featuredImage: '',
     gallery: [] as string[],
@@ -154,7 +156,7 @@ export default function NewArticleForm() {
       isFeatured: form.isFeatured,
       author: {
         name: form.authorName || 'TAARi Staff',
-        slug: slugify(form.authorName || 'taari-staff'),
+        slug: form.authorSlug || slugify(form.authorName || 'taari-staff'),
         avatar: '',
         bio: '',
         socialLinks: [],
@@ -162,6 +164,7 @@ export default function NewArticleForm() {
       readTime: parseInt(form.readTime) || 5,
       featuredImage: form.featuredImage,
       publishedAt: form.publishedAt,
+      submissionId: fromSubmission,
     };
 
     const res = await fetch('/api/admin/articles', {
@@ -322,15 +325,12 @@ export default function NewArticleForm() {
           onSetFeatured={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
         />
 
-        <FormField label="Author Name" htmlFor="authorName">
-          <input
-            id="authorName"
-            className={inputClass}
-            value={form.authorName}
-            onChange={(e) => setForm((f) => ({ ...f, authorName: e.target.value }))}
-            placeholder="Amara Okafor"
-          />
-        </FormField>
+        <AuthorSelect
+          name={form.authorName}
+          slug={form.authorSlug}
+          onChange={({ name, slug }) => setForm((f) => ({ ...f, authorName: name, authorSlug: slug }))}
+          locked={Boolean(fromSubmission)}
+        />
 
         <FormField label="Published At" htmlFor="publishedAt">
           <input

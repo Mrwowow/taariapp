@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AuthorAvatar from "@/components/ui/AuthorAvatar";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -86,13 +87,7 @@ export default async function StoriesPage({
                 {hero.excerpt}
               </p>
               <div className="flex items-center gap-3">
-                <Image
-                  src={hero.author.avatar}
-                  alt={hero.author.name}
-                  width={32}
-                  height={32}
-                  className="rounded-full object-cover"
-                />
+                <AuthorAvatar author={hero.author} size={32} />
                 <p className="text-sm text-cream/60">
                   By {hero.author.name} &middot;{" "}
                   {new Date(hero.publishedAt).toLocaleDateString("en-US", {
@@ -158,13 +153,7 @@ export default async function StoriesPage({
                   {article.excerpt}
                 </p>
                 <div className="flex items-center gap-2">
-                  <Image
-                    src={article.author.avatar}
-                    alt={article.author.name}
-                    width={24}
-                    height={24}
-                    className="rounded-full object-cover"
-                  />
+                  <AuthorAvatar author={article.author} size={24} />
                   <p className="text-xs text-muted">
                     {article.author.name} &middot; {article.readTime} min read
                   </p>

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AuthorAvatar from "@/components/ui/AuthorAvatar";
 import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import NewsletterForm from "@/components/ui/NewsletterForm";
@@ -81,13 +82,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
           {/* Author */}
           <div className="flex items-center gap-3 mb-8">
-            <Image
-              src={article.author.avatar}
-              alt={article.author.name}
-              width={40}
-              height={40}
-              className="rounded-full object-cover"
-            />
+            <AuthorAvatar author={article.author} size={40} />
             <div>
               <p className="text-sm font-medium text-dark">{article.author.name}</p>
               <p className="text-xs text-muted">
@@ -121,6 +116,20 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
                 Gallery — {article.title}
               </p>
             </div>
+          )}
+
+          {/* Community submission disclaimer */}
+          {article.submissionId && (
+            <aside className="my-10 p-4 md:p-5 border-l-2 border-accent bg-accent/[0.04] rounded-r-lg">
+              <p className="text-xs font-medium uppercase tracking-[0.15em] text-muted mb-2">
+                Community Story
+              </p>
+              <p className="text-sm text-muted leading-relaxed">
+                This story was submitted by {article.author.name} and shared with their permission.
+                The views, experiences and details described are the contributor&rsquo;s own and do not
+                necessarily reflect the views of TAARi.
+              </p>
+            </aside>
           )}
 
           {/* Sponsor Banner */}
@@ -162,13 +171,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
               About the Author
             </h3>
             <div className="flex gap-4">
-              <Image
-                src={article.author.avatar}
-                alt={article.author.name}
-                width={64}
-                height={64}
-                className="rounded-full object-cover shrink-0"
-              />
+              <AuthorAvatar author={article.author} size={64} className="shrink-0" />
               <div>
                 <p className="font-medium text-dark">{article.author.name}</p>
                 <p className="text-sm text-muted mt-1">{article.author.bio}</p>

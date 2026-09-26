@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Banners', href: '/admin/banners', icon: '▭' },
   { label: 'Cities', href: '/admin/cities', icon: '◐' },
   { label: 'Articles', href: '/admin/articles', icon: '✦' },
+  { label: 'Authors', href: '/admin/authors', icon: '✎' },
   { label: 'Interviews', href: '/admin/interviews', icon: '◈' },
   { label: 'Reels', href: '/admin/reels', icon: '▶' },
   { label: 'Submissions', href: '/admin/submissions', icon: '◎' },

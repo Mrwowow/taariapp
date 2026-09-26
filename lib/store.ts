@@ -3,6 +3,7 @@
 
 import pool, { withDb } from './db';
 import type { RowDataPacket, ResultSetHeader } from 'mysql2';
+import type { PoolConnection } from 'mysql2/promise';
 
 // Normalize a date input for MySQL DATE / DATETIME columns.
 // Accepts "YYYY-MM-DD", ISO 8601 ("2026-03-31T23:00:00.000Z"), or Date-like.
@@ -52,6 +53,8 @@ export interface Article {
   isFeatured: boolean;
   publishedAt: string;
   readTime: number;
+  /** Set when the article was created from a reader submission. */
+  submissionId?: string | null;
 }
 
 export interface Interview {
@@ -154,6 +157,7 @@ interface ArticleRow extends RowDataPacket {
   id: number; title: string; slug: string; featured_image: string; excerpt: string;
   body: string; author_id: number; city_id: number; categories: string;
   is_sponsored: number; is_featured: number; published_at: string; read_time: number;
+  submission_id?: number | null;
 }
 
 interface GalleryRow extends RowDataPacket {
@@ -285,6 +289,101 @@ export async function deleteCity(id: string): Promise<boolean> {
   return result.affectedRows > 0;
 }
 
+// ── Authors ──────────────────────────────────────────────────────────────────
+
+export type AdminAuthor = Author & { id: string; articleCount: number };
+
+type AuthorInput = { name: string; slug: string; avatar?: string; bio?: string; socialLinks?: { platform: string; url: string }[] };
+
+export async function getAuthors(): Promise<AdminAuthor[]> {
+  const [rows] = await pool.execute<(AuthorRow & { article_count: number })[]>(
+    `SELECT au.*, (SELECT COUNT(*) FROM articles a WHERE a.author_id = au.id) AS article_count
+     FROM authors au ORDER BY au.name`
+  );
+  const [links] = await pool.execute<(SocialLinkRow & { author_id: number })[]>(
+    'SELECT author_id, platform, url FROM author_social_links ORDER BY id'
+  );
+  return rows.map((r) => ({
+    id: String(r.id), name: r.name, slug: r.slug, avatar: r.avatar, bio: r.bio,
+    articleCount: Number(r.article_count),
+    socialLinks: links.filter((l) => l.author_id === r.id).map((l) => ({ platform: l.platform, url: l.url })),
+  }));
+}
+
+export async function getAuthorByIdPublic(id: string): Promise<AdminAuthor | undefined> {
+  return (await getAuthors()).find((a) => a.id === id);
+}
+
+async function replaceAuthorSocialLinks(conn: PoolConnection, authorId: number, links: { platform: string; url: string }[]) {
+  await conn.execute('DELETE FROM author_social_links WHERE author_id = ?', [authorId]);
+  for (const l of links.filter((l) => l.platform?.trim() && l.url?.trim())) {
+    await conn.execute('INSERT INTO author_social_links (author_id, platform, url) VALUES (?, ?, ?)', [authorId, l.platform.trim(), l.url.trim()]);
+  }
+}
+
+export async function createAuthor(data: AuthorInput): Promise<AdminAuthor> {
+  const id = await withDb(async () => {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [result] = await conn.execute<ResultSetHeader>(
+        'INSERT INTO authors (name, slug, avatar, bio) VALUES (?, ?, ?, ?)',
+        [data.name, data.slug, data.avatar ?? '', data.bio ?? '']
+      );
+      await replaceAuthorSocialLinks(conn, result.insertId, data.socialLinks ?? []);
+      await conn.commit();
+      return result.insertId;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  });
+  return (await getAuthorByIdPublic(String(id)))!;
+}
+
+export async function updateAuthor(id: string, data: Partial<AuthorInput>): Promise<AdminAuthor | null> {
+  const fields: string[] = [];
+  const values: string[] = [];
+  if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+  if (data.slug !== undefined) { fields.push('slug = ?'); values.push(data.slug); }
+  if (data.avatar !== undefined) { fields.push('avatar = ?'); values.push(data.avatar); }
+  if (data.bio !== undefined) { fields.push('bio = ?'); values.push(data.bio); }
+
+  const found = await withDb(async () => {
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [existing] = await conn.execute<AuthorRow[]>('SELECT id FROM authors WHERE id = ?', [id]);
+      if (existing.length === 0) { await conn.rollback(); return false; }
+      if (fields.length > 0) await conn.execute(`UPDATE authors SET ${fields.join(', ')} WHERE id = ?`, [...values, id]);
+      if (data.socialLinks !== undefined) await replaceAuthorSocialLinks(conn, Number(id), data.socialLinks);
+      await conn.commit();
+      return true;
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
+  });
+  return found ? ((await getAuthorByIdPublic(id)) ?? null) : null;
+}
+
+/**
+ * articles.author_id cascades on delete, so removing an author with articles
+ * would silently delete those articles. Refuse instead; reassign them first.
+ */
+export async function deleteAuthor(id: string): Promise<'deleted' | 'not_found' | 'has_articles'> {
+  const [[{ cnt }]] = await pool.execute<(RowDataPacket & { cnt: number })[]>(
+    'SELECT COUNT(*) AS cnt FROM articles WHERE author_id = ?', [id]
+  );
+  if (Number(cnt) > 0) return 'has_articles';
+  const [result] = await pool.execute<ResultSetHeader>('DELETE FROM authors WHERE id = ?', [id]);
+  return result.affectedRows > 0 ? 'deleted' : 'not_found';
+}
+
 // ── Articles ─────────────────────────────────────────────────────────────────
 
 async function rowToArticle(row: ArticleRow): Promise<Article> {
@@ -300,6 +399,7 @@ async function rowToArticle(row: ArticleRow): Promise<Article> {
     gallery: gallery.map(g => g.image_url), excerpt: row.excerpt, body, author, city, categories,
     isSponsored: !!row.is_sponsored, isFeatured: !!row.is_featured,
     publishedAt: row.published_at, readTime: row.read_time,
+    submissionId: row.submission_id ? String(row.submission_id) : null,
   };
 }
 
@@ -369,7 +469,10 @@ export async function createArticle(data: Article): Promise<Article> {
     [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [citySlug]);
   }
 
-  const authorId = (await findOrCreateAuthorId(data.author)) ?? 1;
+  // Stories that came from a reader submission are always credited to the submitter.
+  const submission = data.submissionId ? await getSubmissionById(data.submissionId) : undefined;
+  const author = submission ? { name: submission.name } : data.author;
+  const authorId = (await findOrCreateAuthorId(author)) ?? 1;
   const cityId = cityRows[0]?.id ?? 1;
 
   // Article row and its gallery are inserted together so a dropped connection
@@ -380,10 +483,10 @@ export async function createArticle(data: Article): Promise<Article> {
       await conn.beginTransaction();
 
       const [result] = await conn.execute<ResultSetHeader>(
-        `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, categories, is_sponsored, is_featured, published_at, read_time)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO articles (title, slug, featured_image, excerpt, body, author_id, city_id, submission_id, categories, is_sponsored, is_featured, published_at, read_time)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [data.title, data.slug, data.featuredImage, data.excerpt, JSON.stringify(data.body),
-         authorId, cityId, JSON.stringify(data.categories), data.isSponsored ? 1 : 0,
+         authorId, cityId, submission ? Number(data.submissionId) : null, JSON.stringify(data.categories), data.isSponsored ? 1 : 0,
          data.isFeatured ? 1 : 0,
          toMysqlDate(data.publishedAt), data.readTime]
       );
@@ -409,7 +512,7 @@ export async function createArticle(data: Article): Promise<Article> {
 
 export async function updateArticle(slug: string, data: Partial<Article>): Promise<Article | null> {
   const [existing] = await withDb(() =>
-    pool.execute<ArticleRow[]>('SELECT id FROM articles WHERE slug = ?', [slug]),
+    pool.execute<ArticleRow[]>('SELECT id, submission_id FROM articles WHERE slug = ?', [slug]),
   );
   if (existing.length === 0) return null;
 
@@ -429,7 +532,8 @@ export async function updateArticle(slug: string, data: Partial<Article>): Promi
   const publishedAt = toMysqlDate(data.publishedAt);
   if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
   if (data.readTime !== undefined) { fields.push('read_time = ?'); values.push(data.readTime); }
-  const authorId = await findOrCreateAuthorId(data.author);
+  // Submitted stories stay credited to the submitter.
+  const authorId = existing[0].submission_id ? null : await findOrCreateAuthorId(data.author);
   if (authorId !== null) { fields.push('author_id = ?'); values.push(authorId); }
 
   const articleId = existing[0].id;
