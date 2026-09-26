@@ -184,6 +184,16 @@ async function migrate() {
       console.log('✓ submissions.rejection_reason (added)');
     }
 
+    // Link articles created from a reader submission back to that submission
+    const [submissionCol] = await conn.execute<RowDataPacket[]>(
+      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'articles' AND COLUMN_NAME = 'submission_id'"
+    );
+    if ((submissionCol as unknown[]).length === 0) {
+      await conn.execute('ALTER TABLE articles ADD COLUMN submission_id INT NULL AFTER city_id');
+      await conn.execute('ALTER TABLE articles ADD CONSTRAINT articles_submission_fk FOREIGN KEY (submission_id) REFERENCES submissions(id) ON DELETE SET NULL');
+      console.log('✓ articles.submission_id (added)');
+    }
+
     // ── Users ───────────────────────────────────────────────────────
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS users (

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import FormField from '@/components/admin/FormField';
+import AuthorSelect from '@/components/admin/AuthorSelect';
 import ImageUpload from '@/components/admin/ImageUpload';
 import type { Article, City } from '@/lib/store';
 import FormattingHelp from "@/components/article/FormattingHelp";
@@ -36,6 +37,8 @@ export default function EditArticlePage() {
     isSponsored: false,
     isFeatured: false,
     authorName: '',
+    authorSlug: '',
+    submissionId: null as string | null,
     readTime: '5',
     featuredImage: '',
     publishedAt: '',
@@ -58,6 +61,8 @@ export default function EditArticlePage() {
         isSponsored: a.isSponsored,
         isFeatured: a.isFeatured ?? false,
         authorName: a.author.name,
+        authorSlug: a.author.slug,
+        submissionId: a.submissionId ?? null,
         readTime: String(a.readTime),
         featuredImage: a.featuredImage,
         publishedAt: a.publishedAt,
@@ -94,7 +99,7 @@ export default function EditArticlePage() {
       isFeatured: form.isFeatured,
       author: {
         name: form.authorName || 'TAARi Staff',
-        slug: slugify(form.authorName || 'taari-staff'),
+        slug: form.authorSlug || slugify(form.authorName || 'taari-staff'),
         avatar: '',
         bio: '',
         socialLinks: [],
@@ -244,14 +249,12 @@ export default function EditArticlePage() {
           onSetFeatured={(url) => setForm((f) => ({ ...f, featuredImage: url }))}
         />
 
-        <FormField label="Author Name" htmlFor="authorName">
-          <input
-            id="authorName"
-            className={inputClass}
-            value={form.authorName}
-            onChange={(e) => setForm((f) => ({ ...f, authorName: e.target.value }))}
-          />
-        </FormField>
+        <AuthorSelect
+          name={form.authorName}
+          slug={form.authorSlug}
+          onChange={({ name, slug }) => setForm((f) => ({ ...f, authorName: name, authorSlug: slug }))}
+          locked={Boolean(form.submissionId)}
+        />
 
         <FormField label="Published At" htmlFor="publishedAt">
           <input
