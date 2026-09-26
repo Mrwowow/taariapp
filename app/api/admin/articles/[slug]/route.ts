@@ -17,6 +17,9 @@ export async function PUT(
 ) {
   const { slug } = await params;
   const body = await req.json();
+  if (body.slug !== undefined && !String(body.slug).trim()) {
+    return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
+  }
   const updated = await updateArticle(slug, body);
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json(updated);

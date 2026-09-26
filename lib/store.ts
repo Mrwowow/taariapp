@@ -341,8 +341,22 @@ export async function getArticlesByCity(citySlug: string): Promise<Article[]> {
   return Promise.all(rows.map(rowToArticle));
 }
 
+/** Returns the author's id, creating the author if this name hasn't been used before. */
+async function findOrCreateAuthorId(author: Partial<Author> | undefined): Promise<number | null> {
+  const name = author?.name?.trim();
+  if (!name) return null;
+  const slug = author?.slug || name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
+  if (!slug) return null;
+  const [rows] = await pool.execute<AuthorRow[]>('SELECT id FROM authors WHERE slug = ?', [slug]);
+  if (rows.length > 0) return rows[0].id;
+  const [result] = await pool.execute<ResultSetHeader>(
+    'INSERT INTO authors (name, slug, avatar, bio) VALUES (?, ?, ?, ?)',
+    [name, slug, author?.avatar || '', author?.bio || '']
+  );
+  return result.insertId;
+}
+
 export async function createArticle(data: Article): Promise<Article> {
-  const [authorRows] = await pool.execute<AuthorRow[]>('SELECT id FROM authors WHERE slug = ?', [data.author?.slug ?? '']);
   let [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [data.city?.slug ?? '']);
 
   // Auto-create city if it doesn't exist
@@ -355,7 +369,7 @@ export async function createArticle(data: Article): Promise<Article> {
     [cityRows] = await pool.execute<CityRow[]>('SELECT id FROM cities WHERE slug = ?', [citySlug]);
   }
 
-  const authorId = authorRows[0]?.id ?? 1;
+  const authorId = (await findOrCreateAuthorId(data.author)) ?? 1;
   const cityId = cityRows[0]?.id ?? 1;
 
   // Article row and its gallery are inserted together so a dropped connection
@@ -415,6 +429,8 @@ export async function updateArticle(slug: string, data: Partial<Article>): Promi
   const publishedAt = toMysqlDate(data.publishedAt);
   if (publishedAt !== null) { fields.push('published_at = ?'); values.push(publishedAt); }
   if (data.readTime !== undefined) { fields.push('read_time = ?'); values.push(data.readTime); }
+  const authorId = await findOrCreateAuthorId(data.author);
+  if (authorId !== null) { fields.push('author_id = ?'); values.push(authorId); }
 
   const articleId = existing[0].id;
   const gallery = data.gallery;

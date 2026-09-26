@@ -78,13 +78,14 @@ export default function EditArticlePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.title || !slugify(form.slug)) { setError('Title and slug are required.'); return; }
     setSaving(true);
     setError('');
 
     const city = cities.find((c) => c.slug === form.citySlug) ?? cities[0];
     const payload = {
       title: form.title,
-      slug: form.slug,
+      slug: slugify(form.slug),
       excerpt: form.excerpt,
       body: form.body.split('\n').filter(Boolean),
       city,
