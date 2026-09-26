@@ -20,7 +20,8 @@ export default function ArticlesPage() {
 
   async function handleDelete(slug: string, title: string) {
     if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    await fetch(`/api/admin/articles/${slug}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/articles/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+    if (!res.ok) window.alert(`Could not delete "${title}".`);
     load();
   }
 
@@ -61,7 +62,7 @@ export default function ArticlesPage() {
       cell: (a: Article) => (
         <div className="flex items-center gap-2">
           <Link
-            href={`/admin/articles/${a.slug}/edit`}
+            href={`/admin/articles/${encodeURIComponent(a.slug)}/edit`}
             className="text-xs px-3 py-1 border border-gray-200 text-gray-600 rounded hover:bg-gray-50 transition-colors"
           >
             Edit
