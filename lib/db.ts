@@ -20,6 +20,7 @@ const pool = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 10000,
   connectTimeout: 20000,
+  ssl: { rejectUnauthorized: false }, // ← add: new DB server requires TLS
 });
 
 /** Errors that mean "this pooled socket is dead", not "this query is wrong". */
